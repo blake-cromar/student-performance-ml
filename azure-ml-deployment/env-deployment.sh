@@ -46,9 +46,4 @@ echo "🛠  Creating Compute Instance with Standard_DS3_v2..."
 az ml compute create --name "notebook-compute" --resource-group "$RESOURCE_GROUP" --workspace-name "$WORKSPACE_NAME" --size "$COMPUTE_SIZE" --type ComputeInstance ||
 { echo "⚠️ WARNING: Compute instance creation failed. Please check if Standard_DS3_v2 is available in your region."; exit 1; }
 
-# Step 5: Stop Compute Instance Immediately with Error Handling
-echo "🛑 Stopping Compute Instance..."
-az ml compute stop --name "notebook-compute" --resource-group "$RESOURCE_GROUP" --workspace-name "$WORKSPACE_NAME" ||
-{ echo "⚠️ WARNING: Compute instance stop failed, possibly because it was not created."; }
-
 echo "✅ Deployment completed successfully!"
