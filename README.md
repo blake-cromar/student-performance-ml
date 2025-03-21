@@ -13,8 +13,29 @@ This dual-method strategy allows for both automation and custom experimentation,
 
 ## Project Set Up and Installation
 
-### Creating the Workspace
-In the terminal navigate to the 
+Before running the script, make sure the accompanying `.env` file is properly configured. This file is used to provide environment-specific values that the deployment script will reference.
+
+The `.env` file should include the following variables:
+
+- **Azure Subscription Info**:
+  - `SUBSCRIPTION_ID`: Your Azure subscription ID
+  - `RESOURCE_GROUP`: The name of the resource group to create or use
+  - `LOCATION`: The Azure region where resources will be deployed (e.g., `norwayeast`)
+
+- **Azure ML Resource Names**:
+  - `WORKSPACE_NAME`: The name of your Azure Machine Learning workspace
+  - `STORAGE_ACCOUNT_NAME`: The name of the associated storage account (must be globally unique)
+
+- **Compute Configuration**:
+  - `COMPUTE_SIZE`: The VM size for the compute instance (e.g., `Standard_DS11_v2`)
+
+Once the `.env` file has been updated with your values, run the following command in the terminal:
+
+```bash
+bash env-deployment.sh
+```
+
+NOTE: This process takes about 15 minutes.
 
 ## Dataset
 
