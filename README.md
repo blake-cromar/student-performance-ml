@@ -1,6 +1,15 @@
 # Student Math Performance
 
-*TODO:* Write a short introduction to your project.
+This project leverages Azure Machine Learning Studio to predict the final grade (`G3`) of students based on a variety of academic and socio-demographic features from the math student performance dataset. The dataset includes attributes such as prior grades, study time, family background, and school-related factors.
+
+To model the `G3` prediction problem, two distinct approaches within Azure ML Studio are used:
+	1.	Automated ML (AutoML)
+Using Azure’s AutoML, multiple models are automatically trained and evaluated to determine the best-performing regression model for predicting the `G3` column. AutoML handles feature selection, preprocessing, and algorithm tuning, streamlining the model selection process. The top-performing model is chosen based on evaluation metrics such as R² score and mean absolute error (MAE).
+	2.	HyperDrive (Custom Training with Hyperparameter Tuning)
+In contrast to AutoML, the second approach uses HyperDrive, which enables hyperparameter tuning on a custom-defined model. A regression model (FILL THIS IN LATER) is manually implemented and trained using a script. HyperDrive explores different combinations of hyperparameters to optimize the model’s performance, offering more control over the training pipeline.
+
+This dual-method strategy allows for both automation and custom experimentation, offering insights into model performance and trade-offs between ease-of-use and manual fine-tuning.
+
 
 ## Project Set Up and Installation
 
