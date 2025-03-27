@@ -75,12 +75,13 @@ delay=15
 
 while [ $attempt -lt $max_attempts ]; do
   if az ml workspace create \
-    --name "$WORKSPACE_NAME" \
-    --resource-group "$RESOURCE_GROUP" \
-    --location "$LOCATION" \
-    --storage-account "$STORAGE_ACCOUNT_ID" \
-    --key-vault "$KEY_VAULT_ID" \
-    --application-insights "$APP_INSIGHTS_ID"; then
+  --name "$WORKSPACE_NAME" \
+  --resource-group "$RESOURCE_GROUP" \
+  --location "$LOCATION" \
+  --storage-account "$STORAGE_ACCOUNT_ID" \
+  --key-vault "$KEY_VAULT_ID" \
+  --application-insights "$APP_INSIGHTS_ID" \
+  --update-dependent-resources; then
     echo "✅ Azure ML Workspace created."
     break
   else
