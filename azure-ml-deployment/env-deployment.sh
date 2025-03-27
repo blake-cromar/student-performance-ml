@@ -138,22 +138,6 @@ else
   exit 1
 fi
 
-  # Upload the dataset to Azure Blob Storage
-  az storage blob upload \
-    --account-name "$STORAGE_ACCOUNT_NAME" \
-    --container-name "$CONTAINER_NAME" \
-    --file "$DATASET_PATH" \
-    --name "$(basename "$DATASET_PATH")" \
-    --connection-string "$CONNECTION_STRING"
-
-  # Get the URI for the uploaded file
-  DATASET_URI="https://${STORAGE_ACCOUNT_NAME}.blob.core.windows.net/$CONTAINER_NAME/$(basename "$DATASET_PATH")"
-  echo "✅ Dataset uploaded to Azure Blob Storage at: $DATASET_URI"
-else
-  echo "❌ ERROR: Dataset file not found at $DATASET_PATH"
-  exit 1
-fi
-
 # Step 8: Register dataset with Azure ML
 echo "📤 Registering dataset '$DATASET_NAME' in Azure ML..."
 az ml data create --name "$DATASET_NAME" \
