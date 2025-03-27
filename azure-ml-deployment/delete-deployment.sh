@@ -20,12 +20,6 @@ az ml compute delete \
   --resource-group "$RESOURCE_GROUP" \
   --workspace-name "$WORKSPACE_NAME" --yes || true
 
-echo "🧹 Deleting dataset: $DATASET_NAME..."
-az ml data delete \
-  --name "$DATASET_NAME" \
-  --resource-group "$RESOURCE_GROUP" \
-  --workspace-name "$WORKSPACE_NAME" --yes || true
-
 echo "🧹 Deleting Azure ML Workspace: $WORKSPACE_NAME..."
 az ml workspace delete \
   --name "$WORKSPACE_NAME" \
