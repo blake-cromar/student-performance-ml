@@ -21,7 +21,7 @@ check_variable() {
 echo "🔍 Checking required environment variables..."
 for var in SUBSCRIPTION_ID RESOURCE_GROUP LOCATION WORKSPACE_NAME STORAGE_ACCOUNT_NAME COMPUTE_SIZE \
            DATASET_NAME DATASET_PATH DATASET_DESCRIPTION NOTEBOOK_COMPUTE_NAME NOTEBOOK_COMPUTE_SIZE \
-           LOG_ANALYTICS_NAME APP_INSIGHTS_NAME KEY_VAULT_NAME
+           APP_INSIGHTS_NAME KEY_VAULT_NAME
 do
   check_variable "$var"
 done
@@ -40,19 +40,7 @@ az storage account create --name "$STORAGE_ACCOUNT_NAME" \
   --resource-group "$RESOURCE_GROUP" --location "$LOCATION" --sku "Standard_LRS"
 echo
 
-# Step 3: Create Log Analytics Workspace
-echo "📊 Creating Log Analytics Workspace: $LOG_ANALYTICS_NAME..."
-az monitor log-analytics workspace create \
-  --resource-group "$RESOURCE_GROUP" \
-  --workspace-name "$LOG_ANALYTICS_NAME" \
-  --location "$LOCATION"
-LOG_ANALYTICS_ID=$(az monitor log-analytics workspace show \
-  --resource-group "$RESOURCE_GROUP" \
-  --workspace-name "$LOG_ANALYTICS_NAME" \
-  --query id -o tsv)
-echo
-
-# Step 4: Create Application Insights
+# Step 3: Create Application Insights
 echo "📈 Creating Application Insights: $APP_INSIGHTS_NAME..."
 az monitor app-insights component create \
   --app "$APP_INSIGHTS_NAME" \
@@ -65,7 +53,7 @@ APP_INSIGHTS_ID=$(az monitor app-insights component show \
   --query id -o tsv)
 echo
 
-# Step 5: Create Key Vault
+# Step 4: Create Key Vault
 echo "🔐 Creating Key Vault: $KEY_VAULT_NAME..."
 az keyvault create \
   --name "$KEY_VAULT_NAME" \
@@ -77,7 +65,7 @@ KEY_VAULT_ID=$(az keyvault show \
   --query id -o tsv)
 echo
 
-# Step 6: Create Azure ML Workspace with all resources
+# Step 5: Create Azure ML Workspace
 echo "🧠 Creating Azure ML Workspace: $WORKSPACE_NAME..."
 STORAGE_ACCOUNT_ID="/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${RESOURCE_GROUP}/providers/Microsoft.Storage/storageAccounts/${STORAGE_ACCOUNT_NAME}"
 
@@ -87,12 +75,11 @@ az ml workspace create \
   --location "$LOCATION" \
   --storage-account "$STORAGE_ACCOUNT_ID" \
   --key-vault "$KEY_VAULT_ID" \
-  --application-insights "$APP_INSIGHTS_ID" \
-  --log-analytics "$LOG_ANALYTICS_ID"
+  --application-insights "$APP_INSIGHTS_ID"
 echo "✅ Azure ML Workspace created."
 echo
 
-# Step 7: Upload and register dataset
+# Step 6: Upload and register dataset
 echo "📤 Uploading dataset: $DATASET_NAME from $DATASET_PATH..."
 
 az ml data create --name "$DATASET_NAME" \
@@ -104,7 +91,7 @@ az ml data create --name "$DATASET_NAME" \
 echo "✅ Dataset '$DATASET_NAME' uploaded and registered."
 echo
 
-# Step 8: Create compute instance for notebooks
+# Step 7: Create compute instance for notebooks
 echo "💻 Creating compute instance: $NOTEBOOK_COMPUTE_NAME..."
 
 az ml compute create \
@@ -114,3 +101,25 @@ az ml compute create \
   --resource-group "$RESOURCE_GROUP" \
   --workspace-name "$WORKSPACE_NAME"
 echo "✅ Compute instance '$NOTEBOOK_COMPUTE_NAME' created."
+
+# Step 8: Writing the config file
+CONFIG_FILE="../config.json"
+echo "📝 Writing config file to $CONFIG_FILE..."
+
+cat <<EOF > "$CONFIG_FILE"
+{
+  "subscriptionId": "$SUBSCRIPTION_ID",
+  "resourceGroup": "$RESOURCE_GROUP",
+  "location": "$LOCATION",
+  "workspaceName": "$WORKSPACE_NAME",
+  "storageAccountId": "$STORAGE_ACCOUNT_ID",
+  "keyVaultId": "$KEY_VAULT_ID",
+  "appInsightsId": "$APP_INSIGHTS_ID",
+  "datasetName": "$DATASET_NAME",
+  "datasetPath": "$DATASET_PATH",
+  "computeName": "$NOTEBOOK_COMPUTE_NAME",
+  "computeSize": "$NOTEBOOK_COMPUTE_SIZE"
+}
+EOF
+
+echo "✅ Config written to $CONFIG_FILE"
