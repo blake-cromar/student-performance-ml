@@ -7,7 +7,9 @@ set +a
 
 set -e
 
+# --------------------------------------
 # Function to check if a required variable is set
+# --------------------------------------
 check_variable() {
   if [[ -z "${!1}" ]]; then
     echo "❌ ERROR: Required variable '$1' is not set. Please check your .env file."
@@ -17,7 +19,9 @@ check_variable() {
   fi
 }
 
-# Check all required variables
+# --------------------------------------
+# Check all required environment variables
+# --------------------------------------
 echo "🔍 Checking required environment variables..."
 for var in SUBSCRIPTION_ID RESOURCE_GROUP LOCATION WORKSPACE_NAME STORAGE_ACCOUNT_NAME COMPUTE_SIZE \
            DATASET_NAME DATASET_PATH DATASET_DESCRIPTION NOTEBOOK_COMPUTE_NAME NOTEBOOK_COMPUTE_SIZE \
@@ -29,18 +33,24 @@ done
 echo "🚀 Starting deployment..."
 echo
 
+# --------------------------------------
 # Step 1: Create Resource Group
+# --------------------------------------
 echo "🛠  Creating Resource Group: $RESOURCE_GROUP in $LOCATION..."
 az group create --name "$RESOURCE_GROUP" --location "$LOCATION"
 echo
 
+# --------------------------------------
 # Step 2: Create Storage Account
+# --------------------------------------
 echo "🛠  Creating Storage Account: $STORAGE_ACCOUNT_NAME..."
 az storage account create --name "$STORAGE_ACCOUNT_NAME" \
   --resource-group "$RESOURCE_GROUP" --location "$LOCATION" --sku "Standard_LRS"
 echo
 
+# --------------------------------------
 # Step 3: Create Application Insights
+# --------------------------------------
 echo "📈 Creating Application Insights: $APP_INSIGHTS_NAME..."
 az monitor app-insights component create \
   --app "$APP_INSIGHTS_NAME" \
@@ -53,7 +63,9 @@ APP_INSIGHTS_ID=$(az monitor app-insights component show \
   --query id -o tsv)
 echo
 
+# --------------------------------------
 # Step 4: Create Key Vault
+# --------------------------------------
 echo "🔐 Creating Key Vault: $KEY_VAULT_NAME..."
 az keyvault create \
   --name "$KEY_VAULT_NAME" \
@@ -65,7 +77,9 @@ KEY_VAULT_ID=$(az keyvault show \
   --query id -o tsv)
 echo
 
+# --------------------------------------
 # Step 5: Create Azure ML Workspace with retry
+# --------------------------------------
 echo "🧠 Creating Azure ML Workspace: $WORKSPACE_NAME..."
 STORAGE_ACCOUNT_ID="/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${RESOURCE_GROUP}/providers/Microsoft.Storage/storageAccounts/${STORAGE_ACCOUNT_NAME}"
 
@@ -73,21 +87,32 @@ attempt=0
 max_attempts=3
 delay=15
 
+# Retry logic for workspace creation
 while [ $attempt -lt $max_attempts ]; do
+  # Timer countdown for each attempt
+  WAIT_TIME=$delay
+  echo "⏳ Waiting for $WAIT_TIME seconds before attempt $((attempt + 1))..."
+  
+  for ((i=WAIT_TIME; i>0; i--)); do
+    echo -ne "⏳ Time left: $i seconds for attempt $((attempt + 1))\r"
+    sleep 1
+  done
+  echo -e "\n✅ Timer finished. Proceeding with attempt $((attempt + 1))..."
+
+  # Attempt to create the workspace
   if az ml workspace create \
-  --name "$WORKSPACE_NAME" \
-  --resource-group "$RESOURCE_GROUP" \
-  --location "$LOCATION" \
-  --storage-account "$STORAGE_ACCOUNT_ID" \
-  --key-vault "$KEY_VAULT_ID" \
-  --application-insights "$APP_INSIGHTS_ID" \
-  --update-dependent-resources; then
+    --name "$WORKSPACE_NAME" \
+    --resource-group "$RESOURCE_GROUP" \
+    --location "$LOCATION" \
+    --storage-account "$STORAGE_ACCOUNT_ID" \
+    --key-vault "$KEY_VAULT_ID" \
+    --application-insights "$APP_INSIGHTS_ID" \
+    --update-dependent-resources; then
     echo "✅ Azure ML Workspace created."
     break
   else
     attempt=$((attempt + 1))
-    echo "⚠️  Workspace creation failed (attempt $attempt/$max_attempts). Retrying in $delay seconds..."
-    sleep $delay
+    echo "⚠️  Workspace creation failed (attempt $attempt/$max_attempts). Retrying..."
   fi
 done
 
@@ -97,7 +122,9 @@ if [ $attempt -eq $max_attempts ]; then
 fi
 echo
 
+# --------------------------------------
 # Step 6: Upload and register dataset
+# --------------------------------------
 echo "📤 Uploading dataset: $DATASET_NAME from $DATASET_PATH..."
 
 az ml data create --name "$DATASET_NAME" \
@@ -109,7 +136,9 @@ az ml data create --name "$DATASET_NAME" \
 echo "✅ Dataset '$DATASET_NAME' uploaded and registered."
 echo
 
+# --------------------------------------
 # Step 7: Create compute instance for notebooks
+# --------------------------------------
 echo "💻 Creating compute instance: $NOTEBOOK_COMPUTE_NAME..."
 
 az ml compute create \
@@ -120,7 +149,9 @@ az ml compute create \
   --workspace-name "$WORKSPACE_NAME"
 echo "✅ Compute instance '$NOTEBOOK_COMPUTE_NAME' created."
 
+# --------------------------------------
 # Step 8: Writing the config file
+# --------------------------------------
 CONFIG_FILE="../config.json"
 echo "📝 Writing config file to $CONFIG_FILE..."
 
