@@ -65,18 +65,35 @@ KEY_VAULT_ID=$(az keyvault show \
   --query id -o tsv)
 echo
 
-# Step 5: Create Azure ML Workspace
+# Step 5: Create Azure ML Workspace with retry
 echo "🧠 Creating Azure ML Workspace: $WORKSPACE_NAME..."
 STORAGE_ACCOUNT_ID="/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${RESOURCE_GROUP}/providers/Microsoft.Storage/storageAccounts/${STORAGE_ACCOUNT_NAME}"
 
-az ml workspace create \
-  --name "$WORKSPACE_NAME" \
-  --resource-group "$RESOURCE_GROUP" \
-  --location "$LOCATION" \
-  --storage-account "$STORAGE_ACCOUNT_ID" \
-  --key-vault "$KEY_VAULT_ID" \
-  --application-insights "$APP_INSIGHTS_ID"
-echo "✅ Azure ML Workspace created."
+attempt=0
+max_attempts=3
+delay=15
+
+while [ $attempt -lt $max_attempts ]; do
+  if az ml workspace create \
+    --name "$WORKSPACE_NAME" \
+    --resource-group "$RESOURCE_GROUP" \
+    --location "$LOCATION" \
+    --storage-account "$STORAGE_ACCOUNT_ID" \
+    --key-vault "$KEY_VAULT_ID" \
+    --application-insights "$APP_INSIGHTS_ID"; then
+    echo "✅ Azure ML Workspace created."
+    break
+  else
+    attempt=$((attempt + 1))
+    echo "⚠️  Workspace creation failed (attempt $attempt/$max_attempts). Retrying in $delay seconds..."
+    sleep $delay
+  fi
+done
+
+if [ $attempt -eq $max_attempts ]; then
+  echo "❌ ERROR: Azure ML Workspace creation failed after $max_attempts attempts."
+  exit 1
+fi
 echo
 
 # Step 6: Upload and register dataset
