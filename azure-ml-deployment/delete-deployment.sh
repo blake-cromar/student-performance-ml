@@ -1,13 +1,10 @@
 #!/bin/bash
 
-# --------------------------------------
-# Load environment variables from .env
-# --------------------------------------
+# Load environment variables
 set -a
 source .env
 set +a
 
-# Exit immediately if any command fails
 set -e
 
 # --------------------------------------
@@ -33,12 +30,20 @@ echo "⏳ Waiting for workspace deletion to register before purge..."
 sleep 15
 
 # --------------------------------------
-# Purge the soft-deleted ML workspace (required to reuse name)
+# Purge the soft-deleted ML workspace (if it exists)
 # --------------------------------------
 echo "🧼 Purging soft-deleted ML workspace (if it exists)..."
 if ! az rest --method delete \
   --url "https://management.azure.com/subscriptions/$SUBSCRIPTION_ID/providers/Microsoft.MachineLearningServices/locations/$LOCATION/workspaces/$WORKSPACE_NAME?api-version=2023-04-01"; then
   echo "⚠️  Workspace purge may have failed or wasn't necessary."
+fi
+
+# --------------------------------------
+# Purge soft-deleted Key Vault (if it exists)
+# --------------------------------------
+echo "🧼 Purging soft-deleted Key Vault (if it exists)..."
+if ! az keyvault purge --name "$KEY_VAULT_NAME"; then
+  echo "⚠️  Key Vault purge may have failed or wasn't necessary."
 fi
 
 # --------------------------------------
