@@ -31,7 +31,11 @@ echo "⏳ Waiting for workspace deletion to register before purge... This will t
 
 # Timer countdown loop
 for ((i=WAIT_TIME; i>0; i--)); do
-  echo -ne "⏳ Time left: $i seconds\r"
+  if [ $i -eq 1 ]; then
+    echo -ne "⏳ Time left: $i second\r"  # Singular
+  else
+    echo -ne "⏳ Time left: $i seconds\r"  # Plural
+  fi
   sleep 1
 done
 echo -e "\n✅ Timer finished. Proceeding with the purge..."
