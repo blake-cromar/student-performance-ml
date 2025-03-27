@@ -21,7 +21,7 @@ check_variable() {
 echo "🔍 Checking required environment variables..."
 for var in SUBSCRIPTION_ID RESOURCE_GROUP LOCATION WORKSPACE_NAME STORAGE_ACCOUNT_NAME COMPUTE_SIZE \
            DATASET_NAME DATASET_PATH DATASET_DESCRIPTION NOTEBOOK_COMPUTE_NAME NOTEBOOK_COMPUTE_SIZE \
-           APP_INSIGHTS_NAME KEY_VAULT_NAME
+           APP_INSIGHTS_NAME KEY_VAULT_NAME CONTAINER_NAME
 do
   check_variable "$var"
 done
@@ -97,7 +97,18 @@ if [ $attempt -eq $max_attempts ]; then
 fi
 echo
 
-# Step 6: **Automated Dataset Upload**
+# Step 6: Creating a container for the data
+  echo "🗂  Creating container '$CONTAINER_NAME' if it does not exist..."
+
+  # Create the container (this step will always run)
+  az storage container create \
+    --name "$CONTAINER_NAME" \
+    --account-name "$STORAGE_ACCOUNT_NAME" \
+    --connection-string "$CONNECTION_STRING"
+
+  echo "✅ Container '$CONTAINER_NAME' created."
+
+# Step 7: Automated Dataset Upload
 # Check if dataset file exists locally
 if [ -f "$DATASET_PATH" ]; then
   echo "📤 Dataset file found locally at $DATASET_PATH. Uploading to Azure Blob Storage..."
@@ -108,27 +119,7 @@ if [ -f "$DATASET_PATH" ]; then
     --resource-group "$RESOURCE_GROUP" \
     --query connectionString -o tsv)
 
-  # Check if the container exists, if not create it
-  CONTAINER_NAME="datasets"
-  echo "🗂  Checking if container '$CONTAINER_NAME' exists..."
 
-  # Check if the container exists
-  CONTAINER_EXISTS=$(az storage container exists \
-    --name "$CONTAINER_NAME" \
-    --account-name "$STORAGE_ACCOUNT_NAME" \
-    --connection-string "$CONNECTION_STRING" \
-    --query exists -o tsv)
-
-  if [ "$CONTAINER_EXISTS" != "true" ]; then
-    echo "🧨 Container '$CONTAINER_NAME' does not exist. Creating it..."
-    az storage container create \
-      --name "$CONTAINER_NAME" \
-      --account-name "$STORAGE_ACCOUNT_NAME" \
-      --connection-string "$CONNECTION_STRING"
-    echo "✅ Container '$CONTAINER_NAME' created."
-  else
-    echo "✅ Container '$CONTAINER_NAME' already exists."
-  fi
 
   # Upload the dataset to Azure Blob Storage
   az storage blob upload \
@@ -146,7 +137,23 @@ else
   exit 1
 fi
 
-# Step 7: Register dataset with Azure ML
+  # Upload the dataset to Azure Blob Storage
+  az storage blob upload \
+    --account-name "$STORAGE_ACCOUNT_NAME" \
+    --container-name "$CONTAINER_NAME" \
+    --file "$DATASET_PATH" \
+    --name "$(basename "$DATASET_PATH")" \
+    --connection-string "$CONNECTION_STRING"
+
+  # Get the URI for the uploaded file
+  DATASET_URI="https://${STORAGE_ACCOUNT_NAME}.blob.core.windows.net/$CONTAINER_NAME/$(basename "$DATASET_PATH")"
+  echo "✅ Dataset uploaded to Azure Blob Storage at: $DATASET_URI"
+else
+  echo "❌ ERROR: Dataset file not found at $DATASET_PATH"
+  exit 1
+fi
+
+# Step 8: Register dataset with Azure ML
 echo "📤 Registering dataset '$DATASET_NAME' in Azure ML..."
 az ml data create --name "$DATASET_NAME" \
   --path "$DATASET_URI" \
@@ -156,7 +163,7 @@ az ml data create --name "$DATASET_NAME" \
   --workspace-name "$WORKSPACE_NAME"
 echo "✅ Dataset '$DATASET_NAME' registered in Azure ML."
 
-# Step 8: Create compute instance for notebooks
+# Step 9: Create compute instance for notebooks
 echo "💻 Creating compute instance: $NOTEBOOK_COMPUTE_NAME..."
 az ml compute create \
   --name "$NOTEBOOK_COMPUTE_NAME" \
@@ -166,7 +173,7 @@ az ml compute create \
   --workspace-name "$WORKSPACE_NAME"
 echo "✅ Compute instance '$NOTEBOOK_COMPUTE_NAME' created."
 
-# Step 9: Writing the config file
+# Step 10: Writing the config file
 CONFIG_FILE="../config.json"
 echo "📝 Writing config file to $CONFIG_FILE..."
 
