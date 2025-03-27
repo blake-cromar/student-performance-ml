@@ -28,6 +28,8 @@ check_variable "COMPUTE_SIZE"
 check_variable "DATASET_NAME"
 check_variable "DATASET_PATH"
 check_variable "DATASET_DESCRIPTION"
+check_variable "NOTEBOOK_COMPUTE_NAME"
+check_variable "NOTEBOOK_COMPUTE_SIZE"
 
 echo "🚀 Starting deployment..."
 echo
@@ -79,3 +81,19 @@ az ml data create --name "$DATASET_NAME" \
 }
 
 echo "✅ Dataset '$DATASET_NAME' uploaded and registered in workspace."
+echo
+
+# Step 5: Create compute instance for notebooks
+echo "💻 Creating compute instance: $NOTEBOOK_COMPUTE_NAME..."
+
+az ml compute create \
+  --name "$NOTEBOOK_COMPUTE_NAME" \
+  --size "$NOTEBOOK_COMPUTE_SIZE" \
+  --type ComputeInstance \
+  --resource-group "$RESOURCE_GROUP" \
+  --workspace-name "$WORKSPACE_NAME" || {
+    echo "❌ ERROR: Failed to create compute instance."
+    exit 1
+}
+
+echo "✅ Compute instance '$NOTEBOOK_COMPUTE_NAME' created and ready for notebooks."
