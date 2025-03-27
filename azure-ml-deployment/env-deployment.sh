@@ -108,16 +108,38 @@ if [ -f "$DATASET_PATH" ]; then
     --resource-group "$RESOURCE_GROUP" \
     --query connectionString -o tsv)
 
+  # Check if the container exists, if not create it
+  CONTAINER_NAME="datasets"
+  echo "🗂  Checking if container '$CONTAINER_NAME' exists..."
+
+  # Check if the container exists
+  CONTAINER_EXISTS=$(az storage container exists \
+    --name "$CONTAINER_NAME" \
+    --account-name "$STORAGE_ACCOUNT_NAME" \
+    --connection-string "$CONNECTION_STRING" \
+    --query exists -o tsv)
+
+  if [ "$CONTAINER_EXISTS" != "true" ]; then
+    echo "🧨 Container '$CONTAINER_NAME' does not exist. Creating it..."
+    az storage container create \
+      --name "$CONTAINER_NAME" \
+      --account-name "$STORAGE_ACCOUNT_NAME" \
+      --connection-string "$CONNECTION_STRING"
+    echo "✅ Container '$CONTAINER_NAME' created."
+  else
+    echo "✅ Container '$CONTAINER_NAME' already exists."
+  fi
+
   # Upload the dataset to Azure Blob Storage
   az storage blob upload \
     --account-name "$STORAGE_ACCOUNT_NAME" \
-    --container-name "datasets" \
+    --container-name "$CONTAINER_NAME" \
     --file "$DATASET_PATH" \
     --name "$(basename "$DATASET_PATH")" \
     --connection-string "$CONNECTION_STRING"
 
   # Get the URI for the uploaded file
-  DATASET_URI="https://${STORAGE_ACCOUNT_NAME}.blob.core.windows.net/datasets/$(basename "$DATASET_PATH")"
+  DATASET_URI="https://${STORAGE_ACCOUNT_NAME}.blob.core.windows.net/$CONTAINER_NAME/$(basename "$DATASET_PATH")"
   echo "✅ Dataset uploaded to Azure Blob Storage at: $DATASET_URI"
 else
   echo "❌ ERROR: Dataset file not found at $DATASET_PATH"
