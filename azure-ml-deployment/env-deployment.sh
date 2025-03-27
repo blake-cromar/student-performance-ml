@@ -127,7 +127,8 @@ if [ -f "$DATASET_PATH" ]; then
     --container-name "$CONTAINER_NAME" \
     --file "$DATASET_PATH" \
     --name "$(basename "$DATASET_PATH")" \
-    --connection-string "$CONNECTION_STRING"
+    --connection-string "$CONNECTION_STRING" \
+    --overwrite
 
   # Get the URI for the uploaded file
   DATASET_URI="https://${STORAGE_ACCOUNT_NAME}.blob.core.windows.net/$CONTAINER_NAME/$(basename "$DATASET_PATH")"
