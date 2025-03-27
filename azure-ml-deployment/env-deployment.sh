@@ -25,6 +25,9 @@ check_variable "LOCATION"
 check_variable "WORKSPACE_NAME"
 check_variable "STORAGE_ACCOUNT_NAME"
 check_variable "COMPUTE_SIZE"
+check_variable "DATASET_NAME"
+check_variable "DATASET_PATH"
+check_variable "DATASET_DESCRIPTION"
 
 echo "🚀 Starting deployment..."
 echo
@@ -47,8 +50,8 @@ echo
 
 # Step 3: Create Azure ML Workspace
 echo "🛠  Creating Azure ML Workspace: $WORKSPACE_NAME..."
-echo "📦 Using storage account resource ID:"
 STORAGE_ACCOUNT_ID="/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${RESOURCE_GROUP}/providers/Microsoft.Storage/storageAccounts/${STORAGE_ACCOUNT_NAME}"
+echo "📦 Using storage account resource ID:"
 echo "$STORAGE_ACCOUNT_ID"
 
 az ml workspace create \
@@ -61,3 +64,18 @@ az ml workspace create \
 }
 echo "✅ Azure ML Workspace created."
 echo
+
+# Step 4: Upload and register dataset
+echo "📤 Uploading dataset: $DATASET_NAME from $DATASET_PATH..."
+
+az ml data create --name "$DATASET_NAME" \
+  --path "$DATASET_PATH" \
+  --type uri_file \
+  --description "$DATASET_DESCRIPTION" \
+  --resource-group "$RESOURCE_GROUP" \
+  --workspace-name "$WORKSPACE_NAME" || {
+    echo "❌ ERROR: Failed to upload dataset."
+    exit 1
+}
+
+echo "✅ Dataset '$DATASET_NAME' uploaded and registered in workspace."
