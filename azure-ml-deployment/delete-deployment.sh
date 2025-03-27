@@ -26,8 +26,15 @@ az group delete --name "$RESOURCE_GROUP" --yes --no-wait
 # --------------------------------------
 # Delay to ensure Azure registers the workspace deletion
 # --------------------------------------
-echo "⏳ Waiting for workspace deletion to register before purge..."
-sleep 15
+WAIT_TIME=300  # Set wait time in seconds
+echo "⏳ Waiting for workspace deletion to register before purge... This will take ${WAIT_TIME} seconds."
+
+# Timer countdown loop
+for ((i=WAIT_TIME; i>0; i--)); do
+  echo -ne "⏳ Time left: $i seconds\r"
+  sleep 1
+done
+echo -e "\n✅ Timer finished. Proceeding with the purge..."
 
 # --------------------------------------
 # Purge the soft-deleted ML workspace (if it exists)
