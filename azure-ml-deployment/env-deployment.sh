@@ -1,11 +1,10 @@
 #!/bin/bash
 
-# Load environment variables from .env file
-set -a  # Automatically export all variables
+# Load environment variables
+set -a
 source .env
-set +a  # Stop exporting
+set +a
 
-# Exit on error
 set -e
 
 # Function to check if a required variable is set
@@ -18,56 +17,82 @@ check_variable() {
   fi
 }
 
+# Check all required variables
 echo "🔍 Checking required environment variables..."
-check_variable "SUBSCRIPTION_ID"
-check_variable "RESOURCE_GROUP"
-check_variable "LOCATION"
-check_variable "WORKSPACE_NAME"
-check_variable "STORAGE_ACCOUNT_NAME"
-check_variable "COMPUTE_SIZE"
-check_variable "DATASET_NAME"
-check_variable "DATASET_PATH"
-check_variable "DATASET_DESCRIPTION"
-check_variable "NOTEBOOK_COMPUTE_NAME"
-check_variable "NOTEBOOK_COMPUTE_SIZE"
+for var in SUBSCRIPTION_ID RESOURCE_GROUP LOCATION WORKSPACE_NAME STORAGE_ACCOUNT_NAME COMPUTE_SIZE \
+           DATASET_NAME DATASET_PATH DATASET_DESCRIPTION NOTEBOOK_COMPUTE_NAME NOTEBOOK_COMPUTE_SIZE \
+           LOG_ANALYTICS_NAME APP_INSIGHTS_NAME KEY_VAULT_NAME
+do
+  check_variable "$var"
+done
 
 echo "🚀 Starting deployment..."
 echo
 
 # Step 1: Create Resource Group
 echo "🛠  Creating Resource Group: $RESOURCE_GROUP in $LOCATION..."
-az group create --name "$RESOURCE_GROUP" --location "$LOCATION" || {
-  echo "❌ ERROR: Failed to create resource group."
-  exit 1
-}
+az group create --name "$RESOURCE_GROUP" --location "$LOCATION"
 echo
 
 # Step 2: Create Storage Account
 echo "🛠  Creating Storage Account: $STORAGE_ACCOUNT_NAME..."
-az storage account create --name "$STORAGE_ACCOUNT_NAME" --resource-group "$RESOURCE_GROUP" --location "$LOCATION" --sku "Standard_LRS" || {
-  echo "❌ ERROR: Failed to create storage account."
-  exit 1
-}
+az storage account create --name "$STORAGE_ACCOUNT_NAME" \
+  --resource-group "$RESOURCE_GROUP" --location "$LOCATION" --sku "Standard_LRS"
 echo
 
-# Step 3: Create Azure ML Workspace
-echo "🛠  Creating Azure ML Workspace: $WORKSPACE_NAME..."
+# Step 3: Create Log Analytics Workspace
+echo "📊 Creating Log Analytics Workspace: $LOG_ANALYTICS_NAME..."
+az monitor log-analytics workspace create \
+  --resource-group "$RESOURCE_GROUP" \
+  --workspace-name "$LOG_ANALYTICS_NAME" \
+  --location "$LOCATION"
+LOG_ANALYTICS_ID=$(az monitor log-analytics workspace show \
+  --resource-group "$RESOURCE_GROUP" \
+  --workspace-name "$LOG_ANALYTICS_NAME" \
+  --query id -o tsv)
+echo
+
+# Step 4: Create Application Insights
+echo "📈 Creating Application Insights: $APP_INSIGHTS_NAME..."
+az monitor app-insights component create \
+  --app "$APP_INSIGHTS_NAME" \
+  --location "$LOCATION" \
+  --resource-group "$RESOURCE_GROUP" \
+  --application-type web
+APP_INSIGHTS_ID=$(az monitor app-insights component show \
+  --app "$APP_INSIGHTS_NAME" \
+  --resource-group "$RESOURCE_GROUP" \
+  --query id -o tsv)
+echo
+
+# Step 5: Create Key Vault
+echo "🔐 Creating Key Vault: $KEY_VAULT_NAME..."
+az keyvault create \
+  --name "$KEY_VAULT_NAME" \
+  --resource-group "$RESOURCE_GROUP" \
+  --location "$LOCATION"
+KEY_VAULT_ID=$(az keyvault show \
+  --name "$KEY_VAULT_NAME" \
+  --resource-group "$RESOURCE_GROUP" \
+  --query id -o tsv)
+echo
+
+# Step 6: Create Azure ML Workspace with all resources
+echo "🧠 Creating Azure ML Workspace: $WORKSPACE_NAME..."
 STORAGE_ACCOUNT_ID="/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${RESOURCE_GROUP}/providers/Microsoft.Storage/storageAccounts/${STORAGE_ACCOUNT_NAME}"
-echo "📦 Using storage account resource ID:"
-echo "$STORAGE_ACCOUNT_ID"
 
 az ml workspace create \
   --name "$WORKSPACE_NAME" \
   --resource-group "$RESOURCE_GROUP" \
   --location "$LOCATION" \
-  --storage-account "$STORAGE_ACCOUNT_ID" || {
-    echo "❌ ERROR: Failed to create Azure ML workspace."
-    exit 1
-}
+  --storage-account "$STORAGE_ACCOUNT_ID" \
+  --key-vault "$KEY_VAULT_ID" \
+  --application-insights "$APP_INSIGHTS_ID" \
+  --log-analytics "$LOG_ANALYTICS_ID"
 echo "✅ Azure ML Workspace created."
 echo
 
-# Step 4: Upload and register dataset
+# Step 7: Upload and register dataset
 echo "📤 Uploading dataset: $DATASET_NAME from $DATASET_PATH..."
 
 az ml data create --name "$DATASET_NAME" \
@@ -75,15 +100,11 @@ az ml data create --name "$DATASET_NAME" \
   --type uri_file \
   --description "$DATASET_DESCRIPTION" \
   --resource-group "$RESOURCE_GROUP" \
-  --workspace-name "$WORKSPACE_NAME" || {
-    echo "❌ ERROR: Failed to upload dataset."
-    exit 1
-}
-
-echo "✅ Dataset '$DATASET_NAME' uploaded and registered in workspace."
+  --workspace-name "$WORKSPACE_NAME"
+echo "✅ Dataset '$DATASET_NAME' uploaded and registered."
 echo
 
-# Step 5: Create compute instance for notebooks
+# Step 8: Create compute instance for notebooks
 echo "💻 Creating compute instance: $NOTEBOOK_COMPUTE_NAME..."
 
 az ml compute create \
@@ -91,9 +112,5 @@ az ml compute create \
   --size "$NOTEBOOK_COMPUTE_SIZE" \
   --type ComputeInstance \
   --resource-group "$RESOURCE_GROUP" \
-  --workspace-name "$WORKSPACE_NAME" || {
-    echo "❌ ERROR: Failed to create compute instance."
-    exit 1
-}
-
-echo "✅ Compute instance '$NOTEBOOK_COMPUTE_NAME' created and ready for notebooks."
+  --workspace-name "$WORKSPACE_NAME"
+echo "✅ Compute instance '$NOTEBOOK_COMPUTE_NAME' created."
