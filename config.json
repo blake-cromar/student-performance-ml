@@ -1,0 +1,15 @@
+{
+  "subscription_id": "48778e11-0fc7-4fc8-a16c-304a430e61a4",
+  "resource_group": "student-performance-rg",
+  "location": "norwayeast",
+  "workspace_name": "student-performance-ws",
+  "storage_account": "",
+  "key_vault": "",
+  "application_insights": "",
+  "container_registry": "",
+  "dataset_name": "student-math",
+  "dataset_path": "",
+  "compute_name": "notebook-compute",
+  "compute_size": "Standard_DS1_v2",
+  "container_name": "datasets"
+}
