@@ -105,14 +105,13 @@ while [ $attempt -lt $max_attempts ]; do
     echo "⚠️  Workspace creation failed (attempt $attempt/$max_attempts) due to asynchronous loading issues. Retrying in $delay seconds..."
 
     echo -n "⏳ Waiting: "
-    width=${#delay}
+    for ((i=delay; i>0; i--)); do
+      # Print the countdown and pad it to a fixed width (e.g., 22 characters)
+      printf "\r⏳ Retrying in %-22ds..." "$i"
+      sleep 1
+    done
 
-  for ((i=delay; i>0; i--)); do
-    printf "\r⏳ Retrying in %2ds..." "$i"
-    sleep 1
-  done
-
-    echo ""
+    echo ""  # New line after countdown
   fi
 done
 
