@@ -1,72 +1,73 @@
 #!/bin/bash
 
-# Load environment variables
+# ------------------------------------------------------------------------------
+# 🚧 Load environment variables
+# ------------------------------------------------------------------------------
 set -a
 source .env
 set +a
 
 set -e
 
-# --------------------------------------
-# Confirm deletion to avoid accidents
-# --------------------------------------
-echo "⚠️ WARNING: This will delete the entire resource group: $RESOURCE_GROUP in $LOCATION"
+# ------------------------------------------------------------------------------
+# ⚠️ Confirm deletion to avoid accidents
+# ------------------------------------------------------------------------------
+echo "⚠️  WARNING: This will delete the entire resource group: $RESOURCE_GROUP in $LOCATION"
 read -p "Type 'yes' to confirm: " confirm
 if [[ "$confirm" != "yes" ]]; then
   echo "❌ Deletion cancelled."
   exit 1
 fi
 
-# --------------------------------------
-# Delete the entire resource group
-# --------------------------------------
+# ------------------------------------------------------------------------------
+# 🧨 Delete the entire resource group
+# ------------------------------------------------------------------------------
 echo "🧨 Deleting resource group: $RESOURCE_GROUP..."
 az group delete --name "$RESOURCE_GROUP" --yes --no-wait
 
-# --------------------------------------
-# Delay to ensure Azure registers the workspace deletion
-# --------------------------------------
+# ------------------------------------------------------------------------------
+# ⏳ Delay to ensure Azure registers the workspace deletion
+# ------------------------------------------------------------------------------
 WAIT_TIME=300  # Set wait time in seconds
 echo "⏳ Waiting for workspace deletion to register before purge... This will take ${WAIT_TIME} seconds."
 
-# Timer countdown loop
 for ((i=WAIT_TIME; i>0; i--)); do
   if [ $i -eq 1 ]; then
-    echo -ne "⏳ Time left: $i second\r"  # Singular
+    echo -ne "⏳ Time left: $i second\r"
   else
-    echo -ne "⏳ Time left: $i seconds\r"  # Plural
+    echo -ne "⏳ Time left: $i seconds\r"
   fi
   sleep 1
 done
 echo -e "\n✅ Timer finished. Proceeding with the purge..."
 
-# --------------------------------------
-# Purge the soft-deleted ML workspace (if it exists)
-# --------------------------------------
+# ------------------------------------------------------------------------------
+# 🧼 Purge soft-deleted ML workspace (if it exists)
+# ------------------------------------------------------------------------------
 echo "🧼 Purging soft-deleted ML workspace (if it exists)..."
 if ! az rest --method delete \
   --url "https://management.azure.com/subscriptions/$SUBSCRIPTION_ID/providers/Microsoft.MachineLearningServices/locations/$LOCATION/workspaces/$WORKSPACE_NAME?api-version=2023-04-01"; then
   echo "⚠️  Workspace purge may have failed or wasn't necessary."
 fi
 
-# --------------------------------------
-# Purge soft-deleted Key Vault (if it exists)
-# --------------------------------------
+# ------------------------------------------------------------------------------
+# 🧼 Purge soft-deleted Key Vault (if it exists)
+# ------------------------------------------------------------------------------
 echo "🧼 Purging soft-deleted Key Vault (if it exists)..."
 if ! az keyvault purge --name "$KEY_VAULT_NAME"; then
   echo "⚠️  Key Vault purge may have failed or wasn't necessary."
 fi
 
-# --------------------------------------
-# Delete the generated config.json file (if it exists)
-# --------------------------------------
+# ------------------------------------------------------------------------------
+# 🗑️  Delete the generated config.json file (if it exists)
+# ------------------------------------------------------------------------------
 CONFIG_PATH="../config.json"
 if [ -f "$CONFIG_PATH" ]; then
   echo "🗑️  Deleting config file: $CONFIG_PATH"
   rm "$CONFIG_PATH"
 fi
 
-# --------------------------------------
-# Wrap-up message
-# --------------------------------------
+# ------------------------------------------------------------------------------
+# ✅ Wrap-up message
+# ------------------------------------------------------------------------------
 echo "✅ Deletion command issued. Resources will be deleted asynchronously."
