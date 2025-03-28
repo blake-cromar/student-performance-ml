@@ -31,7 +31,7 @@ az group delete --name "$RESOURCE_GROUP" --yes --no-wait
 echo "🧼 Attempting to purge soft-deleted ML workspace: $WORKSPACE_NAME..."
 
 # Alternative approach using az ml workspace delete
-if az ml workspace delete --name "$WORKSPACE_NAME" --subscription "$SUBSCRIPTION_ID" --yes; then
+if az ml workspace delete --name "$WORKSPACE_NAME" --resource-group "$RESOURCE_GROUP" --subscription "$SUBSCRIPTION_ID" --yes; then
   echo "✅ ML workspace purge succeeded using az ml workspace delete."
 else
   # Fallback to using az rest method if the above fails
