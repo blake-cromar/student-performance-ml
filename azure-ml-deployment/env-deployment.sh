@@ -122,10 +122,27 @@ if [ $attempt -eq $max_attempts ]; then
 fi
 
 # ------------------------------------------------------------------------------
-# 📤 Upload Dataset to Azure Blob Storage
+# 🛢️ Creating Blob Storage Container
 # ------------------------------------------------------------------------------
+
+echo "🛢️  Creating container '$CONTAINER_NAME' in Storage Account '$STORAGE_ACCOUNT_NAME'..."
+
+az storage container create \
+  --name "$CONTAINER_NAME" \
+  --account-name "$STORAGE_ACCOUNT_NAME" \
+  --auth-mode login \
+  --only-show-errors \
+  --output none
+
+echo "✅ Container check complete. Continuing with dataset upload..."
+echo ""
+
+# ------------------------------------------------------------------------------
+# 📤 Uploading Dataset to Azure Blob Storage
+# ------------------------------------------------------------------------------
+
 if [ -f "$DATASET_PATH" ]; then
-  echo "📤 Dataset file found locally at $DATASET_PATH. Uploading to Azure Blob Storage..."
+  echo "📤 Dataset file found locally at '$DATASET_PATH'. Uploading to Azure Blob Storage..."
 
   CONNECTION_STRING=$(az storage account show-connection-string \
     --name "$STORAGE_ACCOUNT_NAME" \
@@ -138,12 +155,14 @@ if [ -f "$DATASET_PATH" ]; then
     --file "$DATASET_PATH" \
     --name "$(basename "$DATASET_PATH")" \
     --connection-string "$CONNECTION_STRING" \
-    --overwrite
+    --overwrite \
+    --only-show-errors
 
   DATASET_URI="https://${STORAGE_ACCOUNT_NAME}.blob.core.windows.net/$CONTAINER_NAME/$(basename "$DATASET_PATH")"
-  echo "✅ Dataset uploaded to Azure Blob Storage at: $DATASET_URI"
+  echo "✅ Dataset uploaded successfully:"
+  echo "   $DATASET_URI"
 else
-  echo "❌ ERROR: Dataset file not found at $DATASET_PATH"
+  echo "❌ ERROR: Dataset file not found at '$DATASET_PATH'"
   exit 1
 fi
 
