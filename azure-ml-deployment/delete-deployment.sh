@@ -33,6 +33,7 @@ echo "🧼 Attempting to purge soft-deleted ML workspace: $WORKSPACE_NAME..."
 PURGE_ATTEMPT=0
 PURGE_MAX_ATTEMPTS=10
 PURGE_DELAY=30  # seconds
+CHAR_COUNT=${#PURGE_DELAY}
 
 PURGE_URL="https://management.azure.com/subscriptions/$SUBSCRIPTION_ID/providers/Microsoft.MachineLearningServices/locations/$LOCATION/workspaces/$WORKSPACE_NAME?api-version=2023-04-01"
 
@@ -44,9 +45,11 @@ while [ $PURGE_ATTEMPT -lt $PURGE_MAX_ATTEMPTS ]; do
     PURGE_ATTEMPT=$((PURGE_ATTEMPT + 1))
     echo "⚠️  Purge failed or soft-deleted workspace not there yet (attempt $PURGE_ATTEMPT/$PURGE_MAX_ATTEMPTS). Retrying in $PURGE_DELAY seconds..."
 
-  for ((i=PURGE_DELAY; i>0; i--)); do
-    printf "\r⏳ Retrying purge in %2ds " "$i"
-    sleep 1
+    for ((i=PURGE_DELAY; i>0; i--)); do
+      printf "\r⏳ Retrying purge in %${CHAR_COUNT}s " "${i}s"
+      sleep 1
+    done
+    echo ""
   done
     done
     echo ""
