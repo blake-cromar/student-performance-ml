@@ -164,17 +164,19 @@ echo "📝 Writing config file to $CONFIG_FILE..."
 
 cat <<EOF > "$CONFIG_FILE"
 {
-  "subscriptionId": "$SUBSCRIPTION_ID",
-  "resourceGroup": "$RESOURCE_GROUP",
+  "subscription_id": "$SUBSCRIPTION_ID",
+  "resource_group": "$RESOURCE_GROUP",
   "location": "$LOCATION",
-  "workspaceName": "$WORKSPACE_NAME",
-  "storageAccountId": "$STORAGE_ACCOUNT_ID",
-  "keyVaultId": "$KEY_VAULT_ID",
-  "appInsightsId": "$APP_INSIGHTS_ID",
-  "datasetName": "$DATASET_NAME",
-  "datasetPath": "$DATASET_URI",
-  "computeName": "$NOTEBOOK_COMPUTE_NAME",
-  "computeSize": "$NOTEBOOK_COMPUTE_SIZE"
+  "workspace_name": "$WORKSPACE_NAME",
+  "storage_account": "$STORAGE_ACCOUNT_ID",
+  "key_vault": "$KEY_VAULT_ID",
+  "application_insights": "$APP_INSIGHTS_ID",
+  "container_registry": "$CONTAINER_REGISTRY_ID",
+  "dataset_name": "$DATASET_NAME",
+  "dataset_path": "$DATASET_URI",
+  "compute_name": "$NOTEBOOK_COMPUTE_NAME",
+  "compute_size": "$NOTEBOOK_COMPUTE_SIZE",
+  "container_name": "$CONTAINER_NAME"
 }
 EOF
 
