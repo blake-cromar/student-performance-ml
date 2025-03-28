@@ -1,13 +1,17 @@
 #!/bin/bash
 
-# Load environment variables
+# ------------------------------------------------------------------------------
+# 🚧 Load environment variables
+# ------------------------------------------------------------------------------
 set -a
 source .env
 set +a
 
 set -e
 
-# Function to check if a required variable is set
+# ------------------------------------------------------------------------------
+# 🧪 Function to check if a required variable is set
+# ------------------------------------------------------------------------------
 check_variable() {
   if [[ -z "${!1}" ]]; then
     echo "❌ ERROR: Required variable '$1' is not set. Please check your .env file."
@@ -17,7 +21,9 @@ check_variable() {
   fi
 }
 
-# Check all required environment variables
+# ------------------------------------------------------------------------------
+# 📋 Check all required environment variables
+# ------------------------------------------------------------------------------
 echo "🔍 Checking required environment variables..."
 for var in SUBSCRIPTION_ID RESOURCE_GROUP LOCATION WORKSPACE_NAME STORAGE_ACCOUNT_NAME COMPUTE_SIZE \
            DATASET_NAME DATASET_PATH DATASET_DESCRIPTION NOTEBOOK_COMPUTE_NAME NOTEBOOK_COMPUTE_SIZE \
@@ -29,18 +35,24 @@ done
 echo "🚀 Starting deployment..."
 echo
 
-# Step 1: Create Resource Group
+# ------------------------------------------------------------------------------
+# 🛠  Create Resource Group
+# ------------------------------------------------------------------------------
 echo "🛠  Creating Resource Group: $RESOURCE_GROUP in $LOCATION..."
 az group create --name "$RESOURCE_GROUP" --location "$LOCATION"
 echo
 
-# Step 2: Create Storage Account
-echo "🛠  Creating Storage Account: $STORAGE_ACCOUNT_NAME..."
+# ------------------------------------------------------------------------------
+# 💾 Create Storage Account
+# ------------------------------------------------------------------------------
+echo "💾 Creating Storage Account: $STORAGE_ACCOUNT_NAME..."
 az storage account create --name "$STORAGE_ACCOUNT_NAME" \
   --resource-group "$RESOURCE_GROUP" --location "$LOCATION" --sku "Standard_LRS"
 echo
 
-# Step 3: Create Application Insights
+# ------------------------------------------------------------------------------
+# 📈 Create Application Insights
+# ------------------------------------------------------------------------------
 echo "📈 Creating Application Insights: $APP_INSIGHTS_NAME..."
 az monitor app-insights component create \
   --app "$APP_INSIGHTS_NAME" \
@@ -53,7 +65,9 @@ APP_INSIGHTS_ID=$(az monitor app-insights component show \
   --query id -o tsv)
 echo
 
-# Step 4: Create Key Vault
+# ------------------------------------------------------------------------------
+# 🔐 Create Key Vault
+# ------------------------------------------------------------------------------
 echo "🔐 Creating Key Vault: $KEY_VAULT_NAME..."
 az keyvault create \
   --name "$KEY_VAULT_NAME" \
@@ -65,7 +79,9 @@ KEY_VAULT_ID=$(az keyvault show \
   --query id -o tsv)
 echo
 
-# Step 5: Create Azure ML Workspace with retry and countdown
+# ------------------------------------------------------------------------------
+# 🧠 Create Azure ML Workspace with retry and countdown
+# ------------------------------------------------------------------------------
 echo "🧠 Creating Azure ML Workspace: $WORKSPACE_NAME..."
 STORAGE_ACCOUNT_ID="/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${RESOURCE_GROUP}/providers/Microsoft.Storage/storageAccounts/${STORAGE_ACCOUNT_NAME}"
 
@@ -102,20 +118,17 @@ if [ $attempt -eq $max_attempts ]; then
   exit 1
 fi
 
-# Step 7: Automated Dataset Upload
-# Check if dataset file exists locally
+# ------------------------------------------------------------------------------
+# 📤 Upload Dataset to Azure Blob Storage
+# ------------------------------------------------------------------------------
 if [ -f "$DATASET_PATH" ]; then
   echo "📤 Dataset file found locally at $DATASET_PATH. Uploading to Azure Blob Storage..."
 
-  # Get the storage account connection string
   CONNECTION_STRING=$(az storage account show-connection-string \
     --name "$STORAGE_ACCOUNT_NAME" \
     --resource-group "$RESOURCE_GROUP" \
     --query connectionString -o tsv)
 
-
-
-  # Upload the dataset to Azure Blob Storage
   az storage blob upload \
     --account-name "$STORAGE_ACCOUNT_NAME" \
     --container-name "$CONTAINER_NAME" \
@@ -124,7 +137,6 @@ if [ -f "$DATASET_PATH" ]; then
     --connection-string "$CONNECTION_STRING" \
     --overwrite
 
-  # Get the URI for the uploaded file
   DATASET_URI="https://${STORAGE_ACCOUNT_NAME}.blob.core.windows.net/$CONTAINER_NAME/$(basename "$DATASET_PATH")"
   echo "✅ Dataset uploaded to Azure Blob Storage at: $DATASET_URI"
 else
@@ -132,8 +144,10 @@ else
   exit 1
 fi
 
-# Step 8: Register dataset with Azure ML
-echo "📤 Registering dataset '$DATASET_NAME' in Azure ML..."
+# ------------------------------------------------------------------------------
+# 🧾 Register Dataset in Azure ML
+# ------------------------------------------------------------------------------
+echo "🧾 Registering dataset '$DATASET_NAME' in Azure ML..."
 az ml data create --name "$DATASET_NAME" \
   --path "$DATASET_URI" \
   --type uri_file \
@@ -142,7 +156,9 @@ az ml data create --name "$DATASET_NAME" \
   --workspace-name "$WORKSPACE_NAME"
 echo "✅ Dataset '$DATASET_NAME' registered in Azure ML."
 
-# Step 9: Create compute instance for notebooks
+# ------------------------------------------------------------------------------
+# 💻 Create Compute Instance for Notebooks
+# ------------------------------------------------------------------------------
 echo "💻 Creating compute instance: $NOTEBOOK_COMPUTE_NAME..."
 az ml compute create \
   --name "$NOTEBOOK_COMPUTE_NAME" \
@@ -152,7 +168,9 @@ az ml compute create \
   --workspace-name "$WORKSPACE_NAME"
 echo "✅ Compute instance '$NOTEBOOK_COMPUTE_NAME' created."
 
-# Step 10: Writing the config file
+# ------------------------------------------------------------------------------
+# 📝 Write and Upload config.json
+# ------------------------------------------------------------------------------
 echo "📝 Writing config file to $CONFIG_FILE..."
 
 cat <<EOF > "$CONFIG_FILE"
@@ -173,7 +191,6 @@ cat <<EOF > "$CONFIG_FILE"
 }
 EOF
 
-# Upload config.json to the same container
 echo "📤 Uploading config.json to Azure Blob Storage..."
 az storage blob upload \
   --account-name "$STORAGE_ACCOUNT_NAME" \
@@ -184,5 +201,4 @@ az storage blob upload \
   --overwrite
 
 echo "✅ config.json uploaded to: https://${STORAGE_ACCOUNT_NAME}.blob.core.windows.net/$CONTAINER_NAME/config.json"
-
 echo "✅ Config written to $CONFIG_FILE"
