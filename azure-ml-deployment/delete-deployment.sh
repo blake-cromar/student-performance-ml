@@ -20,29 +20,33 @@ if [[ "$confirm" != "yes" ]]; then
 fi
 
 # ------------------------------------------------------------------------------
-# 🧨 Delete the entire resource group
+# 🧼 Purge ML workspace
 # ------------------------------------------------------------------------------
-echo "🧨 Deleting resource group: $RESOURCE_GROUP..."
-az group delete --name "$RESOURCE_GROUP" --yes --no-wait
-
-# ------------------------------------------------------------------------------
-# 🧼 Purge soft-deleted ML workspace
-# ------------------------------------------------------------------------------
-echo "🧼 Attempting to purge soft-deleted ML workspace: $WORKSPACE_NAME..."
+echo "🧼 Attempting to purge ML workspace: $WORKSPACE_NAME..."
 
 # Attempt using az ml workspace delete
-if az ml workspace delete --name "$WORKSPACE_NAME" --resource-group "$RESOURCE_GROUP" --subscription "$SUBSCRIPTION_ID" --yes; then
-  echo "✅ ML workspace purge succeeded using az ml workspace delete."
+if az ml workspace delete --name "$WORKSPACE_NAME" --resource-group "$RESOURCE_GROUP" --subscription "$SUBSCRIPTION_ID" --permanently-delete --yes; then
+  echo "✅ ML workspace purge succeeded."
 else
   echo "❌ ERROR: Failed to purge ML workspace. You may need to purge it manually."
 fi
 
 # ------------------------------------------------------------------------------
-# 🧼 Purge soft-deleted Key Vault (if it exists)
+# 🧼 Purge Key Vault (if it exists)
 # ------------------------------------------------------------------------------
-echo "🧼 Purging soft-deleted Key Vault (if it exists)..."
+echo "🧼 Attempting to purge Key Vault: $KEY_VAULT_NAME..."
 if ! az keyvault purge --name "$KEY_VAULT_NAME"; then
   echo "⚠️  Key Vault purge may have failed or wasn't necessary."
+fi
+
+# ------------------------------------------------------------------------------
+# 🧨 Delete the entire resource group
+# ------------------------------------------------------------------------------
+echo "🧨 Deleting resource group: $RESOURCE_GROUP..."
+if az group delete --name "$RESOURCE_GROUP" --yes --no-wait; then
+  echo "✅ Resource group deletion initiated."
+else
+  echo "❌ Failed to delete resource group. Check for errors."
 fi
 
 # ------------------------------------------------------------------------------
