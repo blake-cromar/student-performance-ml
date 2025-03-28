@@ -76,3 +76,18 @@ NOTE: This process takes about 15 minutes.
 
 ## Standout Suggestions
 *TODO (Optional):* This is where you can provide information about any standout suggestions that you have attempted.
+
+## Attributions
+
+This project was developed with guidance and resources provided by [Udacity](https://www.udacity.com/) as part of the **Machine Learning Engineer with Microsoft Azure Nanodegree** program. Special thanks to the course instructors:
+
+- **Erick Galinkin** – Principal AI Researcher at Rapid7  
+- **Noah Gift** – Founder of Pragmatic AI Labs and expert in MLOps and Cloud Architecture  
+- **Soham Chatterjee** – Graduate student focused on Edge Computing and IoT  
+- **Alfredo Deza** – Software engineer, open-source developer, and former Olympic athlete  
+## References
+
+Additional reference material and implementation guidance were drawn from the following Microsoft Azure Machine Learning documentation:
+
+- [How to configure automated ML training](https://learn.microsoft.com/en-us/azure/machine-learning/how-to-configure-auto-train?view=azureml-api-2&tabs=python)
+- [RegressionJob class reference – Azure ML Python SDK](https://learn.microsoft.com/en-us/python/api/azure-ai-ml/azure.ai.ml.automl.regressionjob?view=azure-python&utm_source=chatgpt.com)
