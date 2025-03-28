@@ -26,28 +26,34 @@ echo "🧨 Deleting resource group: $RESOURCE_GROUP..."
 az group delete --name "$RESOURCE_GROUP" --yes --no-wait
 
 # ------------------------------------------------------------------------------
-# ⏳ Delay to ensure Azure registers the workspace deletion
+# 🧼 Purge soft-deleted ML workspace (with retry)
 # ------------------------------------------------------------------------------
-WAIT_TIME=300  # Set wait time in seconds
-echo "⏳ Waiting for workspace deletion to register before purge... This will take ${WAIT_TIME} seconds."
+echo "🧼 Attempting to purge soft-deleted ML workspace: $WORKSPACE_NAME..."
 
-for ((i=WAIT_TIME; i>0; i--)); do
-  if [ $i -eq 1 ]; then
-    echo -ne "⏳ Time left: $i second\r"
+PURGE_ATTEMPT=0
+PURGE_MAX_ATTEMPTS=10
+PURGE_DELAY=30  # seconds
+
+PURGE_URL="https://management.azure.com/subscriptions/$SUBSCRIPTION_ID/providers/Microsoft.MachineLearningServices/locations/$LOCATION/workspaces/$WORKSPACE_NAME?api-version=2023-04-01"
+
+while [ $PURGE_ATTEMPT -lt $PURGE_MAX_ATTEMPTS ]; do
+  if az rest --method delete --url "$PURGE_URL"; then
+    echo "✅ ML workspace purge succeeded."
+    break
   else
-    echo -ne "⏳ Time left: $i seconds\r"
-  fi
-  sleep 1
-done
-echo -e "\n✅ Timer finished. Proceeding with the purge..."
+    PURGE_ATTEMPT=$((PURGE_ATTEMPT + 1))
+    echo "⚠️  Purge failed or workspace not ready (attempt $PURGE_ATTEMPT/$PURGE_MAX_ATTEMPTS). Retrying in $PURGE_DELAY seconds..."
 
-# ------------------------------------------------------------------------------
-# 🧼 Purge soft-deleted ML workspace (if it exists)
-# ------------------------------------------------------------------------------
-echo "🧼 Purging soft-deleted ML workspace (if it exists)..."
-if ! az rest --method delete \
-  --url "https://management.azure.com/subscriptions/$SUBSCRIPTION_ID/providers/Microsoft.MachineLearningServices/locations/$LOCATION/workspaces/$WORKSPACE_NAME?api-version=2023-04-01"; then
-  echo "⚠️  Workspace purge may have failed or wasn't necessary."
+    for ((i=PURGE_DELAY; i>0; i--)); do
+      echo -ne "⏳ Retrying purge in ${i}s\r"
+      sleep 1
+    done
+    echo ""
+  fi
+done
+
+if [ $PURGE_ATTEMPT -eq $PURGE_MAX_ATTEMPTS ]; then
+  echo "❌ ERROR: Failed to purge ML workspace after $PURGE_MAX_ATTEMPTS attempts. You may need to purge it manually later."
 fi
 
 # ------------------------------------------------------------------------------
