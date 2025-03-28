@@ -44,9 +44,10 @@ while [ $PURGE_ATTEMPT -lt $PURGE_MAX_ATTEMPTS ]; do
     PURGE_ATTEMPT=$((PURGE_ATTEMPT + 1))
     echo "⚠️  Purge failed or soft-deleted workspace not there yet (attempt $PURGE_ATTEMPT/$PURGE_MAX_ATTEMPTS). Retrying in $PURGE_DELAY seconds..."
 
-    for ((i=PURGE_DELAY; i>0; i--)); do
-      echo -ne "⏳ Retrying purge in ${i}s\r"
-      sleep 1
+  for ((i=PURGE_DELAY; i>0; i--)); do
+    printf "\r⏳ Retrying purge in %2ds " "$i"
+    sleep 1
+  done
     done
     echo ""
   fi
