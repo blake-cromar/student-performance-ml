@@ -21,7 +21,7 @@ check_variable() {
 echo "🔍 Checking required environment variables..."
 for var in SUBSCRIPTION_ID RESOURCE_GROUP LOCATION WORKSPACE_NAME STORAGE_ACCOUNT_NAME COMPUTE_SIZE \
            DATASET_NAME DATASET_PATH DATASET_DESCRIPTION NOTEBOOK_COMPUTE_NAME NOTEBOOK_COMPUTE_SIZE \
-           APP_INSIGHTS_NAME KEY_VAULT_NAME CONTAINER_NAME
+           APP_INSIGHTS_NAME KEY_VAULT_NAME CONTAINER_NAME CONFIG_FILE
 do
   check_variable "$var"
 done
@@ -159,7 +159,6 @@ az ml compute create \
 echo "✅ Compute instance '$NOTEBOOK_COMPUTE_NAME' created."
 
 # Step 10: Writing the config file
-CONFIG_FILE="../config.json"
 echo "📝 Writing config file to $CONFIG_FILE..."
 
 cat <<EOF > "$CONFIG_FILE"
@@ -179,5 +178,17 @@ cat <<EOF > "$CONFIG_FILE"
   "container_name": "$CONTAINER_NAME"
 }
 EOF
+
+# Upload config.json to the same container
+echo "📤 Uploading config.json to Azure Blob Storage..."
+az storage blob upload \
+  --account-name "$STORAGE_ACCOUNT_NAME" \
+  --container-name "$CONTAINER_NAME" \
+  --file "$CONFIG_FILE" \
+  --name "config.json" \
+  --connection-string "$CONNECTION_STRING" \
+  --overwrite
+
+echo "✅ config.json uploaded to: https://${STORAGE_ACCOUNT_NAME}.blob.core.windows.net/$CONTAINER_NAME/config.json"
 
 echo "✅ Config written to $CONFIG_FILE"
