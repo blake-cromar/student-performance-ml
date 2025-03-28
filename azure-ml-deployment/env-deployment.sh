@@ -88,7 +88,6 @@ STORAGE_ACCOUNT_ID="/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${RESOURCE_
 attempt=0
 max_attempts=3
 delay=60
-char_count=${#delay}
 
 while [ $attempt -lt $max_attempts ]; do
   if az ml workspace create \
@@ -105,17 +104,15 @@ while [ $attempt -lt $max_attempts ]; do
     attempt=$((attempt + 1))
     echo "⚠️  Workspace creation failed (attempt $attempt/$max_attempts) due to asynchronous loading issues. Retrying in $delay seconds..."
 
-echo -n "⏳ Waiting: "
+    echo -n "⏳ Waiting: "
+    width=${#delay}
 
-  # Calculate width of the largest number (delay)
-  width=${#delay}
+    for ((i=delay; i>0; i--)); do
+      printf "\r⏳ Waiting: %${width}ds" "$i"
+      sleep 1
+    done
 
-  for ((i=delay; i>0; i--)); do
-    printf "\r⏳ Waiting: %${width}ds" "$i"
-    sleep 1
-  done
-
-echo ""
+    echo ""
   fi
 done
 
