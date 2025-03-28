@@ -106,8 +106,9 @@ while [ $attempt -lt $max_attempts ]; do
 
     echo -n "⏳ Waiting: "
     for ((i=delay; i>0; i--)); do
-      # Print the countdown and pad it to a fixed width (e.g., 22 characters)
-      printf "\r⏳ Retrying in %-22ds..." "$i"
+      # Dynamically adjust the width based on the number of digits in the countdown
+      width=$((${#i} + 3))  # 3 includes the "s..." part to ensure space for the whole output
+      printf "\r⏳ Retrying in %-${width}ds..." "$i"
       sleep 1
     done
 
@@ -207,7 +208,7 @@ cat <<EOF > "$CONFIG_FILE"
   "dataset_path": "$DATASET_URI",
   "compute_name": "$NOTEBOOK_COMPUTE_NAME",
   "compute_size": "$NOTEBOOK_COMPUTE_SIZE",
-  "container_name": "$CONTAINER_NAME",
+  "container_name": "$CONTAINER_NAME"
 }
 EOF
 
