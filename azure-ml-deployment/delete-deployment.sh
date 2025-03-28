@@ -50,9 +50,6 @@ while [ $PURGE_ATTEMPT -lt $PURGE_MAX_ATTEMPTS ]; do
       sleep 1
     done
     echo ""
-  done
-    done
-    echo ""
   fi
 done
 
