@@ -65,7 +65,7 @@ KEY_VAULT_ID=$(az keyvault show \
   --query id -o tsv)
 echo
 
-# Step 5: Create Azure ML Workspace with retry
+# Step 5: Create Azure ML Workspace with retry and countdown
 echo "🧠 Creating Azure ML Workspace: $WORKSPACE_NAME..."
 STORAGE_ACCOUNT_ID="/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${RESOURCE_GROUP}/providers/Microsoft.Storage/storageAccounts/${STORAGE_ACCOUNT_NAME}"
 
@@ -86,8 +86,14 @@ while [ $attempt -lt $max_attempts ]; do
     break
   else
     attempt=$((attempt + 1))
-    echo "⚠️  Workspace creation failed (attempt $attempt/$max_attempts). Retrying in $delay seconds..."
-    sleep $delay
+    echo "⚠️  Workspace creation failed (attempt $attempt/$max_attempts) due to asynchronous loading issues. Retrying in $delay seconds..."
+
+    echo -n "⏳ Waiting: "
+    for ((i=delay; i>0; i--)); do
+      echo -ne "${i}s\r"
+      sleep 1
+    done
+    echo ""
   fi
 done
 
@@ -95,18 +101,6 @@ if [ $attempt -eq $max_attempts ]; then
   echo "❌ ERROR: Azure ML Workspace creation failed after $max_attempts attempts."
   exit 1
 fi
-echo
-
-# Step 6: Creating a container for the data
-  echo "🗂  Creating container '$CONTAINER_NAME' if it does not exist..."
-
-  # Create the container (this step will always run)
-  az storage container create \
-    --name "$CONTAINER_NAME" \
-    --account-name "$STORAGE_ACCOUNT_NAME" \
-    --connection-string "$CONNECTION_STRING"
-
-  echo "✅ Container '$CONTAINER_NAME' created."
 
 # Step 7: Automated Dataset Upload
 # Check if dataset file exists locally
