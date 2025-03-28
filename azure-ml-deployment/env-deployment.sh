@@ -138,6 +138,20 @@ echo "✅ Container check complete. Continuing with dataset upload..."
 echo ""
 
 # ------------------------------------------------------------------------------
+# 🏷️ Get Azure Container Registry ID
+# ------------------------------------------------------------------------------
+
+echo "🏷️  Retrieving Container Registry ID for '$CONTAINER_NAME'..."
+
+CONTAINER_REGISTRY_ID=$(az acr show \
+  --name "$STORAGE_ACCOUNT_NAME" \
+  --resource-group "$RESOURCE_GROUP" \
+  --query id -o tsv)
+
+echo "✅ Container Registry ID retrieved: $CONTAINER_REGISTRY_ID"
+echo ""
+
+# ------------------------------------------------------------------------------
 # 📤 Uploading Dataset to Azure Blob Storage
 # ------------------------------------------------------------------------------
 
@@ -209,7 +223,7 @@ cat <<EOF > "$CONFIG_FILE"
   "dataset_path": "$DATASET_URI",
   "compute_name": "$NOTEBOOK_COMPUTE_NAME",
   "compute_size": "$NOTEBOOK_COMPUTE_SIZE",
-  "container_name": "$CONTAINER_NAME"
+  "container_name": "$CONTAINER_NAME",
 }
 EOF
 
