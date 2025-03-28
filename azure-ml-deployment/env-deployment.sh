@@ -104,15 +104,12 @@ while [ $attempt -lt $max_attempts ]; do
     attempt=$((attempt + 1))
     echo "⚠️  Workspace creation failed (attempt $attempt/$max_attempts) due to asynchronous loading issues. Retrying in $delay seconds..."
 
-    echo -n "⏳ Waiting: "
+    # Reprint countdown, clearing line each time
     for ((i=delay; i>0; i--)); do
-      # Dynamically adjust the width based on the number of digits in the countdown
-      width=$((${#i} + 3))  # 3 includes the "s..." part to ensure space for the whole output
-      printf "\r⏳ Retrying in %-${width}ds..." "$i"
+      # Clear the line before printing the new countdown
+      printf "\r\033[K⏳ Retrying in $i seconds..."
       sleep 1
     done
-
-    echo ""  # New line after countdown
   fi
 done
 
