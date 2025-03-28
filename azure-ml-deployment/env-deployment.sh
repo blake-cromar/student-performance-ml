@@ -107,10 +107,10 @@ while [ $attempt -lt $max_attempts ]; do
     echo -n "⏳ Waiting: "
     width=${#delay}
 
-    for ((i=delay; i>0; i--)); do
-      printf "\r⏳ Waiting: %${width}ds" "$i"
-      sleep 1
-    done
+  for ((i=delay; i>0; i--)); do
+    printf "\r⏳ Retrying in %2ds..." "$i"
+    sleep 1
+  done
 
     echo ""
   fi
