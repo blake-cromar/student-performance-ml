@@ -26,38 +26,23 @@ echo "🧨 Deleting resource group: $RESOURCE_GROUP..."
 az group delete --name "$RESOURCE_GROUP" --yes --no-wait
 
 # ------------------------------------------------------------------------------
-# 🧼 Purge soft-deleted ML workspace (with retry)
+# 🧼 Purge soft-deleted ML workspace
 # ------------------------------------------------------------------------------
 echo "🧼 Attempting to purge soft-deleted ML workspace: $WORKSPACE_NAME..."
 
-PURGE_ATTEMPT=0
-PURGE_MAX_ATTEMPTS=10
-PURGE_DELAY=30  # seconds
-
-PURGE_URL="https://management.azure.com/subscriptions/$SUBSCRIPTION_ID/providers/Microsoft.MachineLearningServices/locations/$LOCATION/workspaces/$WORKSPACE_NAME?api-version=2023-04-01"
-
-while [ $PURGE_ATTEMPT -lt $PURGE_MAX_ATTEMPTS ]; do
+# Alternative approach using az ml workspace delete
+if az ml workspace delete --name "$WORKSPACE_NAME" --subscription "$SUBSCRIPTION_ID" --yes; then
+  echo "✅ ML workspace purge succeeded using az ml workspace delete."
+else
+  # Fallback to using az rest method if the above fails
+  echo "⚠️ Attempting to purge using az rest method..."
+  PURGE_URL="https://management.azure.com/subscriptions/$SUBSCRIPTION_ID/providers/Microsoft.MachineLearningServices/locations/$LOCATION/workspaces/$WORKSPACE_NAME?api-version=2023-04-01"
+  
   if az rest --method delete --url "$PURGE_URL"; then
-    echo "✅ ML workspace purge succeeded."
-    break
+    echo "✅ ML workspace purge succeeded using az rest method."
   else
-    PURGE_ATTEMPT=$((PURGE_ATTEMPT + 1))
-    echo "⚠️  Purge failed or soft-deleted workspace not there yet (attempt $PURGE_ATTEMPT/$PURGE_MAX_ATTEMPTS). Retrying in $PURGE_DELAY seconds..."
-
-    echo -n "⏳ Retrying purge in: "
-    width=${#PURGE_DELAY}
-
-    for ((i=PURGE_DELAY; i>0; i--)); do
-      printf "\r⏳ Retrying purge in: %${width}ds" "$i"
-      sleep 1
-    done
-
-    echo ""
+    echo "❌ ERROR: Failed to purge ML workspace. You may need to purge it manually."
   fi
-done
-
-if [ $PURGE_ATTEMPT -eq $PURGE_MAX_ATTEMPTS ]; then
-  echo "❌ ERROR: Failed to purge ML workspace after $PURGE_MAX_ATTEMPTS attempts. You may need to purge it manually later."
 fi
 
 # ------------------------------------------------------------------------------
