@@ -30,19 +30,11 @@ az group delete --name "$RESOURCE_GROUP" --yes --no-wait
 # ------------------------------------------------------------------------------
 echo "🧼 Attempting to purge soft-deleted ML workspace: $WORKSPACE_NAME..."
 
-# Alternative approach using az ml workspace delete
+# Attempt using az ml workspace delete
 if az ml workspace delete --name "$WORKSPACE_NAME" --resource-group "$RESOURCE_GROUP" --subscription "$SUBSCRIPTION_ID" --yes; then
   echo "✅ ML workspace purge succeeded using az ml workspace delete."
 else
-  # Fallback to using az rest method if the above fails
-  echo "⚠️ Attempting to purge using az rest method..."
-  PURGE_URL="https://management.azure.com/subscriptions/$SUBSCRIPTION_ID/providers/Microsoft.MachineLearningServices/locations/$LOCATION/workspaces/$WORKSPACE_NAME?api-version=2023-04-01"
-  
-  if az rest --method delete --url "$PURGE_URL"; then
-    echo "✅ ML workspace purge succeeded using az rest method."
-  else
-    echo "❌ ERROR: Failed to purge ML workspace. You may need to purge it manually."
-  fi
+  echo "❌ ERROR: Failed to purge ML workspace. You may need to purge it manually."
 fi
 
 # ------------------------------------------------------------------------------
