@@ -20,6 +20,14 @@ if [[ "$confirm" != "yes" ]]; then
 fi
 
 # ------------------------------------------------------------------------------
+# 🧼 Purge Key Vault (if it exists)
+# ------------------------------------------------------------------------------
+echo "🧼 Attempting to purge Key Vault: $KEY_VAULT_NAME..."
+if ! az keyvault purge --name "$KEY_VAULT_NAME"; then
+  echo "⚠️  Key Vault purge may have failed or wasn't necessary."
+fi
+
+# ------------------------------------------------------------------------------
 # 🧼 Purge ML workspace
 # ------------------------------------------------------------------------------
 echo "🧼 Attempting to purge ML workspace: $WORKSPACE_NAME..."
@@ -29,14 +37,6 @@ if az ml workspace delete --name "$WORKSPACE_NAME" --resource-group "$RESOURCE_G
   echo "✅ ML workspace purge succeeded."
 else
   echo "❌ ERROR: Failed to purge ML workspace. You may need to purge it manually."
-fi
-
-# ------------------------------------------------------------------------------
-# 🧼 Purge Key Vault (if it exists)
-# ------------------------------------------------------------------------------
-echo "🧼 Attempting to purge Key Vault: $KEY_VAULT_NAME..."
-if ! az keyvault purge --name "$KEY_VAULT_NAME"; then
-  echo "⚠️  Key Vault purge may have failed or wasn't necessary."
 fi
 
 # ------------------------------------------------------------------------------
