@@ -293,7 +293,6 @@ cat <<EOF > "$CONFIG_FILE"
   "compute_size": "$NOTEBOOK_COMPUTE_SIZE"
 }
 EOF
-EOF
 
 echo "📄 Config file written to: $CONFIG_FILE"
 
