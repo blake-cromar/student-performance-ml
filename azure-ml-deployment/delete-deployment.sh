@@ -44,9 +44,13 @@ fi
 # ------------------------------------------------------------------------------
 # 🧼 Purge Key Vault (if it exists)
 # ------------------------------------------------------------------------------
-echo "🧼 Attempting to purge Key Vault: $KEY_VAULT_NAME..."
-if ! az keyvault purge --name "$KEY_VAULT_NAME"; then
-  echo "⚠️  Key Vault purge may have failed or wasn't necessary."
+if az keyvault show --name "$KEY_VAULT_NAME" &> /dev/null; then
+  echo "🧼 Attempting to purge Key Vault: $KEY_VAULT_NAME..."
+  if ! az keyvault purge --name "$KEY_VAULT_NAME"; then
+    echo "⚠️  Key Vault purge may have failed or wasn't necessary."
+  fi
+else
+  echo "ℹ️  Key Vault not found or already purged: $KEY_VAULT_NAME"
 fi
 
 # ------------------------------------------------------------------------------
