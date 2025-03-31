@@ -27,13 +27,25 @@ check_variable() {
 echo "🔍 Checking required environment variables..."
 for var in SUBSCRIPTION_ID RESOURCE_GROUP LOCATION WORKSPACE_NAME STORAGE_ACCOUNT_NAME COMPUTE_SIZE \
            DATASET_NAME DATASET_PATH DATASET_DESCRIPTION NOTEBOOK_COMPUTE_NAME NOTEBOOK_COMPUTE_SIZE \
-           APP_INSIGHTS_NAME KEY_VAULT_NAME CONTAINER_NAME CONFIG_FILE
+           APP_INSIGHTS_NAME KEY_VAULT_NAME CONTAINER_NAME CONFIG_FILE DATASTORE_NAME DATASET_VERSION
+           
 do
   check_variable "$var"
 done
 
 echo "🚀 Starting deployment..."
 echo
+
+# ------------------------------------------------------------------------------
+# 🧪 Setup - Derive any computed values
+# ------------------------------------------------------------------------------
+
+echo "🧪 Deriving dataset blob name from local file path..."
+
+# Ensure BLOB_NAME is dynamically set based on the loaded DATASET_PATH
+BLOB_NAME=$(basename "$DATASET_PATH")
+
+echo "📄 Blob name resolved as '$BLOB_NAME'."
 
 # ------------------------------------------------------------------------------
 # 🛠  Create Resource Group
@@ -141,39 +153,84 @@ echo ""
 if [ -f "$DATASET_PATH" ]; then
   echo "📤 Dataset file found locally at '$DATASET_PATH'. Uploading to Azure Blob Storage..."
 
-  CONNECTION_STRING=$(az storage account show-connection-string \
-    --name "$STORAGE_ACCOUNT_NAME" \
-    --resource-group "$RESOURCE_GROUP" \
-    --query connectionString -o tsv)
-
   az storage blob upload \
     --account-name "$STORAGE_ACCOUNT_NAME" \
     --container-name "$CONTAINER_NAME" \
     --file "$DATASET_PATH" \
-    --name "$(basename "$DATASET_PATH")" \
-    --connection-string "$CONNECTION_STRING" \
+    --name "$BLOB_NAME" \
+    --auth-mode login \
     --overwrite \
     --only-show-errors
 
-  DATASET_URI="https://${STORAGE_ACCOUNT_NAME}.blob.core.windows.net/$CONTAINER_NAME/$(basename "$DATASET_PATH")"
+  UPLOADED_BLOB_URI="https://${STORAGE_ACCOUNT_NAME}.blob.core.windows.net/$CONTAINER_NAME/$BLOB_NAME"
   echo "✅ Dataset uploaded successfully:"
-  echo "   $DATASET_URI"
+  echo "   $UPLOADED_BLOB_URI"
 else
   echo "❌ ERROR: Dataset file not found at '$DATASET_PATH'"
   exit 1
 fi
 
+# Optional: wait a bit to ensure Azure indexes the blob
+echo "⏳ Waiting a moment to allow blob indexing..."
+sleep 2
+
 # ------------------------------------------------------------------------------
-# 🧾 Register Dataset in Azure ML
+# 🧾 Register Dataset in Azure ML using workspaceblobstore
 # ------------------------------------------------------------------------------
-echo "🧾 Registering dataset '$DATASET_NAME' in Azure ML..."
-az ml data create --name "$DATASET_NAME" \
-  --path "$DATASET_URI" \
+
+echo "🔎 Detecting container associated with datastore '$DATASTORE_NAME'..."
+
+DATASTORE_CONTAINER_NAME=$(az ml datastore show \
+  --name "$DATASTORE_NAME" \
+  --resource-group "$RESOURCE_GROUP" \
+  --workspace-name "$WORKSPACE_NAME" \
+  --query "container_name" -o tsv)
+
+if [ -z "$DATASTORE_CONTAINER_NAME" ]; then
+  echo "❌ ERROR: Could not retrieve container name for datastore '$DATASTORE_NAME'."
+  exit 1
+fi
+
+echo "📦 Datastore '$DATASTORE_NAME' is linked to container '$DATASTORE_CONTAINER_NAME'."
+
+# Confirm file is uploaded to the correct container
+if [ "$CONTAINER_NAME" != "$DATASTORE_CONTAINER_NAME" ]; then
+  echo "⚠️ WARNING: File is uploaded to container '$CONTAINER_NAME',"
+  echo "            but datastore '$DATASTORE_NAME' points to '$DATASTORE_CONTAINER_NAME'."
+  echo "💡 Consider uploading to the correct container or creating a custom datastore."
+  exit 1
+fi
+
+echo "🧾 Registering dataset '$DATASET_NAME' in Azure ML using datastore path..."
+
+az ml data create \
+  --name "$DATASET_NAME" \
+  ${DATASET_VERSION:+--version "$DATASET_VERSION"} \
+  --path "azureml://datastores/$DATASTORE_NAME/paths/$CONTAINER_NAME/$BLOB_NAME" \
   --type uri_file \
   --description "$DATASET_DESCRIPTION" \
   --resource-group "$RESOURCE_GROUP" \
   --workspace-name "$WORKSPACE_NAME"
-echo "✅ Dataset '$DATASET_NAME' registered in Azure ML."
+
+echo "✅ Dataset '$DATASET_NAME' registered successfully. Verifying..."
+
+# ------------------------------------------------------------------------------
+# 🔍 Verifying registration
+# ------------------------------------------------------------------------------
+
+az ml data show \
+  --name "$DATASET_NAME" \
+  ${DATASET_VERSION:+--version "$DATASET_VERSION"} \
+  --resource-group "$RESOURCE_GROUP" \
+  --workspace-name "$WORKSPACE_NAME" \
+  --only-show-errors > /dev/null
+
+if [ $? -eq 0 ]; then
+  echo "✅ Dataset '$DATASET_NAME' is verified and viewable in Azure ML Studio."
+else
+  echo "❌ ERROR: Dataset registration failed or dataset not found in Azure ML."
+  exit 1
+fi
 
 # ------------------------------------------------------------------------------
 # 💻 Create Compute Instance for Notebooks
@@ -205,7 +262,7 @@ cat <<EOF > "$CONFIG_FILE"
   "dataset_path": "$DATASET_URI",
   "compute_name": "$NOTEBOOK_COMPUTE_NAME",
   "compute_size": "$NOTEBOOK_COMPUTE_SIZE",
-  "container_name": "$CONTAINER_NAME"
+  "container_name": "$2CONTAINER_NAME"
 }
 EOF
 
