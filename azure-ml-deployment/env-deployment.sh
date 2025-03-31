@@ -247,6 +247,10 @@ echo "✅ Compute instance '$NOTEBOOK_COMPUTE_NAME' created."
 # ------------------------------------------------------------------------------
 # 📝 Write and Upload config.json
 # ------------------------------------------------------------------------------
+
+# Define the dataset URI using the Azure ML datastore path
+DATASET_URI="azureml://datastores/$DATASTORE_NAME/paths/$CONTAINER_NAME/$BLOB_NAME"
+
 echo "📝 Writing config file to $CONFIG_FILE..."
 
 cat <<EOF > "$CONFIG_FILE"
@@ -255,25 +259,31 @@ cat <<EOF > "$CONFIG_FILE"
   "resource_group": "$RESOURCE_GROUP",
   "location": "$LOCATION",
   "workspace_name": "$WORKSPACE_NAME",
-  "storage_account": "$STORAGE_ACCOUNT_ID",
-  "key_vault": "$KEY_VAULT_ID",
-  "application_insights": "$APP_INSIGHTS_ID",
+  "storage_account_id": "$STORAGE_ACCOUNT_ID",
+  "key_vault_id": "$KEY_VAULT_ID",
+  "application_insights_id": "$APP_INSIGHTS_ID",
+  "datastore_name": "$DATASTORE_NAME",
+  "container_name": "$CONTAINER_NAME",
+  "blob_name": "$BLOB_NAME",
   "dataset_name": "$DATASET_NAME",
-  "dataset_path": "$DATASET_URI",
+  "dataset_uri": "$DATASET_URI",
+  "dataset_version": "$DATASET_VERSION",
+  "dataset_description": "$DATASET_DESCRIPTION",
   "compute_name": "$NOTEBOOK_COMPUTE_NAME",
-  "compute_size": "$NOTEBOOK_COMPUTE_SIZE",
-  "container_name": "$2CONTAINER_NAME"
+  "compute_size": "$NOTEBOOK_COMPUTE_SIZE"
 }
 EOF
 
-echo "📤 Uploading config.json to Azure Blob Storage..."
+echo "📄 Config file written to: $CONFIG_FILE"
+
 az storage blob upload \
   --account-name "$STORAGE_ACCOUNT_NAME" \
   --container-name "$CONTAINER_NAME" \
   --file "$CONFIG_FILE" \
   --name "config.json" \
-  --connection-string "$CONNECTION_STRING" \
-  --overwrite
+  --auth-mode login \
+  --overwrite \
+  --only-show-errors
 
 echo "✅ config.json uploaded to: https://${STORAGE_ACCOUNT_NAME}.blob.core.windows.net/$CONTAINER_NAME/config.json"
 echo "✅ Config written to $CONFIG_FILE"
