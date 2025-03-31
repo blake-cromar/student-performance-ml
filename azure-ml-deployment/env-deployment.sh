@@ -193,14 +193,24 @@ if az ml datastore show \
   --only-show-errors > /dev/null 2>&1; then
   echo "✅ Datastore '$DATASTORE_NAME' already exists. Skipping creation."
 else
-  echo "📦 Creating custom datastore '$DATASTORE_NAME' for container '$CONTAINER_NAME'..."
+  echo "📦 Creating custom datastore '$DATASTORE_NAME' using spec file..."
 
+  # Create the YAML spec file
+  cat <<EOF > datastore.yml
+name: $DATASTORE_NAME
+type: azure_blob
+description: Custom datastore for student project container
+target:
+  storage_account_name: $STORAGE_ACCOUNT_NAME
+  container_name: $CONTAINER_NAME
+  credentials:
+    type: account_key
+    key: $STORAGE_KEY
+EOF
+
+  # Run the create command with the spec
   az ml datastore create \
-    --name "$DATASTORE_NAME" \
-    --type azure_blob \
-    --account-name "$STORAGE_ACCOUNT_NAME" \
-    --container-name "$CONTAINER_NAME" \
-    --account-key "$STORAGE_KEY" \
+    --file datastore.yml \
     --resource-group "$RESOURCE_GROUP" \
     --workspace-name "$WORKSPACE_NAME" \
     --only-show-errors
@@ -211,6 +221,9 @@ else
   fi
 
   echo "✅ Custom datastore '$DATASTORE_NAME' created successfully."
+
+  # Cleanup of the spec file
+  rm -f datastore.yml
 fi
 
 # ------------------------------------------------------------------------------
