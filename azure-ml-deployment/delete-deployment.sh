@@ -42,16 +42,29 @@ else
 fi
 
 # ------------------------------------------------------------------------------
-# 🧼 Purge Key Vault (if it exists)
+# 🧼 Wait and attempt to purge Key Vault repeatedly
 # ------------------------------------------------------------------------------
-if az keyvault show --name "$KEY_VAULT_NAME" &> /dev/null; then
-  echo "🧼 Attempting to purge Key Vault: $KEY_VAULT_NAME..."
-  if ! az keyvault purge --name "$KEY_VAULT_NAME"; then
-    echo "⚠️  Key Vault purge may have failed or wasn't necessary."
+echo "⏳ Waiting for Key Vault to become available for purge: $KEY_VAULT_NAME"
+MAX_ATTEMPTS=2
+SLEEP_SECONDS=60
+attempt=1
+
+while (( attempt <= MAX_ATTEMPTS )); do
+  echo "🔁 Attempt $attempt to purge Key Vault..."
+  if az keyvault purge --name "$KEY_VAULT_NAME"; then
+    echo "✅ Key Vault purged successfully."
+    break
+  else
+    echo "⌛ Key Vault not ready for purge. Waiting $SLEEP_SECONDS seconds..."
+    sleep "$SLEEP_SECONDS"
   fi
-else
-  echo "ℹ️  Key Vault not found or already purged: $KEY_VAULT_NAME"
+  (( attempt++ ))
+done
+
+if (( attempt > MAX_ATTEMPTS )); then
+  echo "⚠️  Gave up trying to purge Key Vault after $MAX_ATTEMPTS attempts. You may need to purge it manually."
 fi
+
 
 # ------------------------------------------------------------------------------
 # 🗑️  Delete the generated config.json file (if it exists)
