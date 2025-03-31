@@ -172,7 +172,7 @@ echo "🛢️  Creating container '$CONTAINER_NAME' in Storage Account '$STORAGE
 az storage container create \
   --name "$CONTAINER_NAME" \
   --account-name "$STORAGE_ACCOUNT_NAME" \
-  --auth-mode login \
+  --account-key "$STORAGE_KEY" \
   --only-show-errors \
   --output none
 
@@ -308,8 +308,7 @@ cat <<EOF > "$CONFIG_FILE"
   "dataset_version": "$DATASET_VERSION",
   "dataset_description": "$DATASET_DESCRIPTION",
   "compute_name": "$NOTEBOOK_COMPUTE_NAME",
-  "compute_size": "$NOTEBOOK_COMPUTE_SIZE",
-  "assignee_object_id": "$ASSIGNEE_OBJECT_ID"
+  "compute_size": "$NOTEBOOK_COMPUTE_SIZE"
 }
 EOF
 
