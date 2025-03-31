@@ -47,6 +47,21 @@ BLOB_NAME=$(basename "$DATASET_PATH")
 
 echo "📄 Blob name resolved as '$BLOB_NAME'."
 
+# Generate created_at timestamp in ISO 8601 format (UTC)
+CREATED_AT=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+# Extract parts for a detailed breakdown
+CREATED_YEAR=$(date -u +"%Y")
+CREATED_MONTH=$(date -u +"%B")   
+CREATED_DAY=$(date -u +"%d")
+CREATED_TIME=$(date -u +"%H:%M:%S UTC")
+
+# Fancy echo output
+echo "📆 Workspace creation timestamp:"
+echo "   🗓️  Date : $CREATED_MONTH $CREATED_DAY, $CREATED_YEAR"
+echo "   ⏰ Time : $CREATED_TIME"
+echo "   🧾 Full : $CREATED_AT"
+
 # ------------------------------------------------------------------------------
 # 🛠  Create Resource Group
 # ------------------------------------------------------------------------------
@@ -255,6 +270,11 @@ echo "📝 Writing config file to $CONFIG_FILE..."
 
 cat <<EOF > "$CONFIG_FILE"
 {
+  "created_at": "$CREATED_AT",
+  "created_year": "$CREATED_YEAR",
+  "created_month": "$CREATED_MONTH",
+  "created_day": "$CREATED_DAY",
+  "created_time": "$CREATED_TIME",
   "subscription_id": "$SUBSCRIPTION_ID",
   "resource_group": "$RESOURCE_GROUP",
   "location": "$LOCATION",
@@ -272,6 +292,7 @@ cat <<EOF > "$CONFIG_FILE"
   "compute_name": "$NOTEBOOK_COMPUTE_NAME",
   "compute_size": "$NOTEBOOK_COMPUTE_SIZE"
 }
+EOF
 EOF
 
 echo "📄 Config file written to: $CONFIG_FILE"
