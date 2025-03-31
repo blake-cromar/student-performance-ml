@@ -180,6 +180,40 @@ echo "✅ Container check complete. Continuing with dataset upload..."
 echo ""
 
 # ------------------------------------------------------------------------------
+# 🗃️ Create custom Azure ML Datastore pointing to the uploaded container
+# ------------------------------------------------------------------------------
+
+echo "🗃️  Ensuring custom datastore '$DATASTORE_NAME' exists for container '$CONTAINER_NAME'..."
+
+# Check if the datastore already exists
+if az ml datastore show \
+  --name "$DATASTORE_NAME" \
+  --resource-group "$RESOURCE_GROUP" \
+  --workspace-name "$WORKSPACE_NAME" \
+  --only-show-errors > /dev/null 2>&1; then
+  echo "✅ Datastore '$DATASTORE_NAME' already exists. Skipping creation."
+else
+  echo "📦 Creating custom datastore '$DATASTORE_NAME' for container '$CONTAINER_NAME'..."
+
+  az ml datastore create \
+    --name "$DATASTORE_NAME" \
+    --type azure_blob \
+    --account-name "$STORAGE_ACCOUNT_NAME" \
+    --container-name "$CONTAINER_NAME" \
+    --account-key "$STORAGE_KEY" \
+    --resource-group "$RESOURCE_GROUP" \
+    --workspace-name "$WORKSPACE_NAME" \
+    --only-show-errors
+
+  if [ $? -ne 0 ]; then
+    echo "❌ ERROR: Failed to create datastore '$DATASTORE_NAME'."
+    exit 1
+  fi
+
+  echo "✅ Custom datastore '$DATASTORE_NAME' created successfully."
+fi
+
+# ------------------------------------------------------------------------------
 # 📤 Uploading Dataset to Azure Blob Storage
 # ------------------------------------------------------------------------------
 
