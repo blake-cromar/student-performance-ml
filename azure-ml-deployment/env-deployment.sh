@@ -56,7 +56,7 @@ CREATED_MONTH=$(date -u +"%B")
 CREATED_DAY=$(date -u +"%d")
 CREATED_TIME=$(date -u +"%H:%M:%S UTC")
 
-# Fancy echo output
+# Time Output
 echo "📆 Workspace creation timestamp:"
 echo "   🗓️  Date : $CREATED_MONTH $CREATED_DAY, $CREATED_YEAR"
 echo "   ⏰ Time : $CREATED_TIME"
@@ -76,6 +76,24 @@ echo "💾 Creating Storage Account: $STORAGE_ACCOUNT_NAME..."
 az storage account create --name "$STORAGE_ACCOUNT_NAME" \
   --resource-group "$RESOURCE_GROUP" --location "$LOCATION" --sku "Standard_LRS"
 echo
+
+# ------------------------------------------------------------------------------
+# 🔑 Retrieve Storage Account Key (for auth-mode fallback)
+# ------------------------------------------------------------------------------
+
+echo "🔑 Retrieving storage account key for '$STORAGE_ACCOUNT_NAME'..."
+
+STORAGE_KEY=$(az storage account keys list \
+  --resource-group "$RESOURCE_GROUP" \
+  --account-name "$STORAGE_ACCOUNT_NAME" \
+  --query "[0].value" -o tsv)
+
+if [[ -z "$STORAGE_KEY" ]]; then
+  echo "❌ ERROR: Failed to retrieve storage account key. Check permissions or account name."
+  exit 1
+fi
+
+echo "✅ Storage account key retrieved successfully."
 
 # ------------------------------------------------------------------------------
 # 📈 Create Application Insights
@@ -170,10 +188,10 @@ if [ -f "$DATASET_PATH" ]; then
 
   az storage blob upload \
     --account-name "$STORAGE_ACCOUNT_NAME" \
+    --account-key "$STORAGE_KEY" \
     --container-name "$CONTAINER_NAME" \
     --file "$DATASET_PATH" \
     --name "$BLOB_NAME" \
-    --auth-mode login \
     --overwrite \
     --only-show-errors
 
@@ -290,7 +308,8 @@ cat <<EOF > "$CONFIG_FILE"
   "dataset_version": "$DATASET_VERSION",
   "dataset_description": "$DATASET_DESCRIPTION",
   "compute_name": "$NOTEBOOK_COMPUTE_NAME",
-  "compute_size": "$NOTEBOOK_COMPUTE_SIZE"
+  "compute_size": "$NOTEBOOK_COMPUTE_SIZE",
+  "assignee_object_id": "$ASSIGNEE_OBJECT_ID"
 }
 EOF
 
