@@ -141,7 +141,6 @@ echo ""
 # ------------------------------------------------------------------------------
 # 🗃️ Create custom Azure ML Datastore pointing to the uploaded container
 # ------------------------------------------------------------------------------
-
 echo "🗃️  Ensuring custom datastore '$DATASTORE_NAME' exists for container '$CONTAINER_NAME'..."
 
 # Check if the datastore already exists
@@ -154,7 +153,7 @@ if az ml datastore show \
 else
   echo "📦 Creating custom datastore '$DATASTORE_NAME' using spec file..."
 
-  # Create the YAML spec file
+# Create the YAML spec file
 cat <<EOF > datastore.yml
 name: $DATASTORE_NAME
 type: azure_blob
@@ -162,11 +161,21 @@ description: Custom Azure Blob datastore for project file storage
 account_name: $STORAGE_ACCOUNT_NAME
 container_name: $CONTAINER_NAME
 credentials:
-  type: account_key
-  key: $STORAGE_KEY
+  account_key:
+    key: $STORAGE_KEY
 EOF
 
-  # Run the create command with the spec
+  # Validate the YAML spec before creating
+  echo "🔍 Validating datastore spec file..."
+  if az ml datastore validate --file datastore.yml --only-show-errors; then
+    echo "✅ Datastore spec file is valid."
+  else
+    echo "❌ ERROR: Datastore spec file validation failed."
+    rm -f datastore.yml
+    exit 1
+  fi
+
+  # Run the create command with the validated spec
   az ml datastore create \
     --file datastore.yml \
     --resource-group "$RESOURCE_GROUP" \
@@ -175,6 +184,7 @@ EOF
 
   if [ $? -ne 0 ]; then
     echo "❌ ERROR: Failed to create datastore '$DATASTORE_NAME'."
+    rm -f datastore.yml
     exit 1
   fi
 
