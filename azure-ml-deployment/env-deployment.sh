@@ -152,16 +152,15 @@ if az ml datastore show \
 else
   echo "📦 Creating custom datastore '$DATASTORE_NAME' using spec file..."
 
-  # 📝 Generate datastore.yml
-  cat <<EOF > datastore.yml
+# 📝 Generate datastore.yml
+cat <<EOF > datastore.yml
 name: $DATASTORE_NAME
 type: azure_blob
 description: Custom Azure Blob datastore for project file storage
 account_name: $STORAGE_ACCOUNT_NAME
 container_name: $CONTAINER_NAME
 credentials:
-  account_key:
-    key: $STORAGE_KEY
+  account_key: $STORAGE_KEY
 EOF
 
   # 🚀 Create the datastore
