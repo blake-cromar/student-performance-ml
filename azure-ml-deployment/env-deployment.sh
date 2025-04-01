@@ -23,7 +23,6 @@ check_required_variables
 # ------------------------------------------------------------------------------
 # 🧪 Setup - Derive any computed values
 # ------------------------------------------------------------------------------
-
 echo "🧪 Deriving dataset blob name from local file path..."
 
 # Ensure BLOB_NAME is dynamically set based on the loaded DATASET_PATH
@@ -31,19 +30,20 @@ BLOB_NAME=$(basename "$DATASET_PATH")
 
 echo "📄 Blob name resolved as '$BLOB_NAME'."
 
-# Generate created_at timestamp in ISO 8601 format (UTC)
-CREATED_AT=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+# Generate created_at timestamp in ISO 8601 format (local time with timezone offset)
+CREATED_AT=$(date +"%Y-%m-%dT%H:%M:%S%z")
 
-# Extract parts for a detailed breakdown
-CREATED_YEAR=$(date -u +"%Y")
-CREATED_MONTH=$(date -u +"%B")   
-CREATED_DAY=$(date -u +"%d")
-CREATED_TIME=$(date -u +"%H:%M:%S UTC")
+# Extract parts for a detailed breakdown (local time)
+CREATED_YEAR=$(date +"%Y")
+CREATED_MONTH=$(date +"%B")   
+CREATED_DAY=$(date +"%d")
+CREATED_TIME=$(date +"%H:%M:%S %Z")
 
 # Time Output
 echo "📆 Workspace creation timestamp:"
 echo "   🗓️  Date : $CREATED_MONTH $CREATED_DAY, $CREATED_YEAR"
 echo "   ⏰ Time : $CREATED_TIME"
+echo "   🧾 Full : $CREATED_AT"
 
 # ------------------------------------------------------------------------------
 # 🛠  Create Resource Group
