@@ -1,7 +1,7 @@
 # ------------------------------------------------------------------------------
 # 🧪 Function to check if a required variable is set
 # ------------------------------------------------------------------------------
-check_variable() {
+check_required_variables() {
   if [[ -z "${!1}" ]]; then
     echo "❌ ERROR: Required variable '$1' is not set. Please check your .env file."
     exit 1
