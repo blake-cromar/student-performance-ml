@@ -196,16 +196,15 @@ else
   echo "📦 Creating custom datastore '$DATASTORE_NAME' using spec file..."
 
   # Create the YAML spec file
-  cat <<EOF > datastore.yml
+cat <<EOF > datastore.yml
 name: $DATASTORE_NAME
 type: azure_blob
-description: Custom datastore for student project container
-target:
-  storage_account_name: $STORAGE_ACCOUNT_NAME
-  container_name: $CONTAINER_NAME
-  credentials:
-    type: account_key
-    key: $STORAGE_KEY
+description: Custom Azure Blob datastore for project file storage
+account_name: $STORAGE_ACCOUNT_NAME
+container_name: $CONTAINER_NAME
+credentials:
+  type: account_key
+  key: $STORAGE_KEY
 EOF
 
   # Run the create command with the spec
