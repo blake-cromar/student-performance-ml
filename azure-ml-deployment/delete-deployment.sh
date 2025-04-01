@@ -23,6 +23,7 @@ fi
 # 🧩 Source shared function definitions
 # ------------------------------------------------------------------------------
 source ./env_check.sh
+source ./retry_utils.sh
 
 # ------------------------------------------------------------------------------
 # 📋 Check all required environment variables
@@ -52,37 +53,11 @@ else
 fi
 
 # ------------------------------------------------------------------------------
-# 🧼 Wait and attempt to purge Key Vault repeatedly
+# 🧼 Wait and attempt to purge Key Vault with retry
 # ------------------------------------------------------------------------------
 echo "⏳ Waiting for Key Vault to become available for purge: $KEY_VAULT_NAME"
 
-MAX_ATTEMPTS=2
-SLEEP_SECONDS=60
-attempt=1
-
-while (( attempt <= MAX_ATTEMPTS )); do
-  echo "🔁 Attempt $attempt to purge Key Vault..."
-  
-  if az keyvault purge --name "$KEY_VAULT_NAME"; then
-    echo "✅ Key Vault purged successfully."
-    break
-  else
-    echo "⚠️  Purge attempt $attempt failed. Likely due to soft-delete delay. Retrying in $SLEEP_SECONDS seconds..."
-
-    # Countdown display
-    for ((i=SLEEP_SECONDS; i>0; i--)); do
-      printf "\r\033[K⏳ Retrying in $i seconds..."
-      sleep 1
-    done
-    echo ""  # Newline after countdown
-  fi
-
-  (( attempt++ ))
-done
-
-if (( attempt > MAX_ATTEMPTS )); then
-  echo "❌ ERROR: Gave up trying to purge Key Vault after $MAX_ATTEMPTS attempts. You may need to purge it manually."
-fi
+retry_with_countdown 2 60 "az keyvault purge --name \"$KEY_VAULT_NAME\""
 
 
 # ------------------------------------------------------------------------------

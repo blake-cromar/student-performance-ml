@@ -13,6 +13,7 @@ set -e
 # 🧩 Source shared function definitions
 # ------------------------------------------------------------------------------
 source ./env_check.sh
+source ./retry_utils.sh
 
 # ------------------------------------------------------------------------------
 # 📋 Check all required environment variables
@@ -112,38 +113,14 @@ echo
 echo "🧠 Creating Azure ML Workspace: $WORKSPACE_NAME..."
 STORAGE_ACCOUNT_ID="/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${RESOURCE_GROUP}/providers/Microsoft.Storage/storageAccounts/${STORAGE_ACCOUNT_NAME}"
 
-attempt=0
-max_attempts=3
-delay=60
-
-while [ $attempt -lt $max_attempts ]; do
-  if az ml workspace create \
-    --name "$WORKSPACE_NAME" \
-    --resource-group "$RESOURCE_GROUP" \
-    --location "$LOCATION" \
-    --storage-account "$STORAGE_ACCOUNT_ID" \
-    --key-vault "$KEY_VAULT_ID" \
-    --application-insights "$APP_INSIGHTS_ID" \
-    --update-dependent-resources; then
-    echo "✅ Azure ML Workspace created."
-    break
-  else
-    attempt=$((attempt + 1))
-    echo "⚠️  Workspace creation failed (attempt $attempt/$max_attempts) due to asynchronous loading issues. Retrying in $delay seconds..."
-
-    # Reprint countdown, clearing line each time
-    for ((i=delay; i>0; i--)); do
-      # Clear the line before printing the new countdown
-      printf "\r\033[K⏳ Retrying in $i seconds..."
-      sleep 1
-    done
-  fi
-done
-
-if [ $attempt -eq $max_attempts ]; then
-  echo "❌ ERROR: Azure ML Workspace creation failed after $max_attempts attempts."
-  exit 1
-fi
+retry_with_countdown 2 60 "az ml workspace create \
+  --name \"$WORKSPACE_NAME\" \
+  --resource-group \"$RESOURCE_GROUP\" \
+  --location \"$LOCATION\" \
+  --storage-account \"$STORAGE_ACCOUNT_ID\" \
+  --key-vault \"$KEY_VAULT_ID\" \
+  --application-insights \"$APP_INSIGHTS_ID\" \
+  --update-dependent-resources"
 
 # ------------------------------------------------------------------------------
 # 🛢️ Creating Blob Storage Container
