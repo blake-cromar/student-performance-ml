@@ -317,10 +317,10 @@ echo "📄 Config file written to: $CONFIG_FILE"
 
 az storage blob upload \
   --account-name "$STORAGE_ACCOUNT_NAME" \
+  --account-key "$STORAGE_KEY" \
   --container-name "$CONTAINER_NAME" \
   --file "$CONFIG_FILE" \
   --name "config.json" \
-  --auth-mode login \
   --overwrite \
   --only-show-errors
 
