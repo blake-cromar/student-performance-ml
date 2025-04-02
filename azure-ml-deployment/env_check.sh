@@ -23,6 +23,4 @@ check_required_variables() {
   do
     check_variable "$var"
   done
-  echo "🚀 Starting deployment..."
-  echo
 }
