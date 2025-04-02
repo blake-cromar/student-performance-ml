@@ -12,8 +12,8 @@ set -e
 # ------------------------------------------------------------------------------
 # 🧩 Source shared function definitions
 # ------------------------------------------------------------------------------
-source ./env_check.sh
-source ./retry_utils.sh
+source ./utils/env_check.sh
+source ./utils/retry_utils.sh
 
 # ------------------------------------------------------------------------------
 # 📋 Check all required environment variables
