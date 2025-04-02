@@ -34,6 +34,14 @@ BLOB_NAME=$(basename "$DATASET_PATH")
 
 echo "📄 Blob name resolved as '$BLOB_NAME'."
 
+# Safely escape the dataset description
+ESCAPED_DESCRIPTION=$(jq -Rn --arg desc "$DATASET_DESCRIPTION" '$desc')
+
+echo "📝 Dataset description prepared and safely escaped for JSON:"
+echo "   📚 Original : $DATASET_DESCRIPTION"
+echo "   🔐 Escaped  : $ESCAPED_DESCRIPTION"
+echo 
+
 # Generate created_at timestamp in ISO 8601 format (local time with timezone offset)
 CREATED_AT=$(date +"%Y-%m-%dT%H:%M:%S%z")
 
@@ -319,7 +327,7 @@ cat <<EOF > "$CONFIG_FILE"
     "dataset_name": "$DATASET_NAME",
     "dataset_uri": "$DATASET_URI",
     "dataset_version": "$DATASET_VERSION",
-    "dataset_description": "$DATASET_DESCRIPTION",
+    "dataset_description": "$ESCAPED_DESCRIPTION",
     "delimiter": "$DELIMITER",
     "encoding": "$ENCODING",
     "has_header": $HAS_HEADER
