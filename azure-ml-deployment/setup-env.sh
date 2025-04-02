@@ -327,7 +327,7 @@ cat <<EOF > "$CONFIG_FILE"
     "dataset_name": "$DATASET_NAME",
     "dataset_uri": "$DATASET_URI",
     "dataset_version": "$DATASET_VERSION",
-    "dataset_description": "$ESCAPED_DESCRIPTION",
+    "dataset_description": $ESCAPED_DESCRIPTION,
     "delimiter": "$DELIMITER",
     "encoding": "$ENCODING",
     "has_header": $HAS_HEADER
