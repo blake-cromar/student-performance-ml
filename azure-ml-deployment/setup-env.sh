@@ -212,7 +212,7 @@ echo "⏳ Waiting a moment to allow blob indexing..."
 sleep 2
 
 # ------------------------------------------------------------------------------
-# 🧾 Register Dataset in Azure ML using workspaceblobstore
+# 🧾 Register Dataset in Azure ML using workspaceblobstore and YAML spec
 # ------------------------------------------------------------------------------
 
 echo "🔎 Detecting container associated with datastore '$DATASTORE_NAME'..."
@@ -238,16 +238,28 @@ if [ "$CONTAINER_NAME" != "$DATASTORE_CONTAINER_NAME" ]; then
   exit 1
 fi
 
-echo "🧾 Registering dataset '$DATASET_NAME' in Azure ML using datastore path..."
+echo "🧾 Registering dataset '$DATASET_NAME' in Azure ML using YAML spec..."
+
+# Write YAML file using .env-sourced CSV settings
+cat <<EOF > dataset.yml
+name: $DATASET_NAME
+${DATASET_VERSION:+version: $DATASET_VERSION}
+description: "$DATASET_DESCRIPTION"
+type: uri_file
+path: azureml://datastores/$DATASTORE_NAME/paths/$BLOB_NAME
+data_type: uri_file
+format: delimited
+delimiter: "$DELIMITER"
+has_header: $HAS_HEADER
+encoding: "$ENCODING"
+EOF
 
 az ml data create \
-  --name "$DATASET_NAME" \
-  ${DATASET_VERSION:+--version "$DATASET_VERSION"} \
-  --path "azureml://datastores/$DATASTORE_NAME/paths/$BLOB_NAME" \
-  --type uri_file \
-  --description "$DATASET_DESCRIPTION" \
+  --file dataset.yml \
   --resource-group "$RESOURCE_GROUP" \
   --workspace-name "$WORKSPACE_NAME"
+
+rm -f dataset.yml
 
 echo "✅ Dataset '$DATASET_NAME' registered successfully. Verifying..."
 
