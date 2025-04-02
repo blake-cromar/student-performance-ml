@@ -43,7 +43,6 @@ CREATED_TIME=$(date +"%H:%M:%S %Z")
 echo "📆 Workspace creation timestamp:"
 echo "   🗓️  Date : $CREATED_MONTH $CREATED_DAY, $CREATED_YEAR"
 echo "   ⏰ Time : $CREATED_TIME"
-echo "   🧾 Full : $CREATED_AT"
 
 # ------------------------------------------------------------------------------
 # 🛠  Create Resource Group
