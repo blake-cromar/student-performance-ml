@@ -212,7 +212,7 @@ echo "⏳ Waiting a moment to allow blob indexing..."
 sleep 2
 
 # ------------------------------------------------------------------------------
-# 🧾 Register Dataset in Azure ML using workspaceblobstore and YAML spec
+# 🧾 Register Dataset in Azure ML using workspaceblobstore
 # ------------------------------------------------------------------------------
 
 echo "🔎 Detecting container associated with datastore '$DATASTORE_NAME'..."
@@ -292,27 +292,42 @@ echo "📝 Writing config file to $CONFIG_FILE..."
 
 cat <<EOF > "$CONFIG_FILE"
 {
-  "created_at": "$CREATED_AT",
-  "created_year": "$CREATED_YEAR",
-  "created_month": "$CREATED_MONTH",
-  "created_day": "$CREATED_DAY",
-  "created_time": "$CREATED_TIME",
-  "subscription_id": "$SUBSCRIPTION_ID",
-  "resource_group": "$RESOURCE_GROUP",
-  "location": "$LOCATION",
-  "workspace_name": "$WORKSPACE_NAME",
-  "storage_account_id": "$STORAGE_ACCOUNT_ID",
-  "key_vault_id": "$KEY_VAULT_ID",
-  "application_insights_id": "$APP_INSIGHTS_ID",
-  "datastore_name": "$DATASTORE_NAME",
-  "container_name": "$CONTAINER_NAME",
-  "blob_name": "$BLOB_NAME",
-  "dataset_name": "$DATASET_NAME",
-  "dataset_uri": "$DATASET_URI",
-  "dataset_version": "$DATASET_VERSION",
-  "dataset_description": "$DATASET_DESCRIPTION",
-  "compute_name": "$NOTEBOOK_COMPUTE_NAME",
-  "compute_size": "$NOTEBOOK_COMPUTE_SIZE"
+  "metadata": {
+    "created_at": "$CREATED_AT",
+    "created_year": "$CREATED_YEAR",
+    "created_month": "$CREATED_MONTH",
+    "created_day": "$CREATED_DAY",
+    "created_time": "$CREATED_TIME"
+  },
+  "azure": {
+    "subscription_id": "$SUBSCRIPTION_ID",
+    "resource_group": "$RESOURCE_GROUP",
+    "location": "$LOCATION"
+  },
+  "workspace": {
+    "workspace_name": "$WORKSPACE_NAME",
+    "storage_account_id": "$STORAGE_ACCOUNT_ID",
+    "key_vault_id": "$KEY_VAULT_ID",
+    "application_insights_id": "$APP_INSIGHTS_ID"
+  },
+  "datastore": {
+    "datastore_name": "$DATASTORE_NAME",
+    "container_name": "$CONTAINER_NAME",
+    "blob_name": "$BLOB_NAME"
+  },
+  "dataset": {
+    "dataset_name": "$DATASET_NAME",
+    "dataset_uri": "$DATASET_URI",
+    "dataset_version": "$DATASET_VERSION",
+    "dataset_description": "$DATASET_DESCRIPTION",
+    "delimiter": "$DELIMITER",
+    "encoding": "$ENCODING",
+    "has_header": $HAS_HEADER
+  },
+  "compute": {
+    "compute_name": "$NOTEBOOK_COMPUTE_NAME",
+    "compute_size": "$NOTEBOOK_COMPUTE_SIZE"
+  }
 }
 EOF
 
