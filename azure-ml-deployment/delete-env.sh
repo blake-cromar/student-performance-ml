@@ -57,7 +57,7 @@ fi
 # ------------------------------------------------------------------------------
 echo "⏳ Waiting for Key Vault to become available for purge: $KEY_VAULT_NAME"
 
-retry_with_countdown 10 12 "az keyvault purge --name \"$KEY_VAULT_NAME\""
+retry_with_countdown 12 10 "az keyvault purge --name \"$KEY_VAULT_NAME\""
 
 
 # ------------------------------------------------------------------------------
