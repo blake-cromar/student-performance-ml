@@ -124,7 +124,7 @@ echo
 echo "🧠 Creating Azure ML Workspace: $WORKSPACE_NAME..."
 STORAGE_ACCOUNT_ID="/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${RESOURCE_GROUP}/providers/Microsoft.Storage/storageAccounts/${STORAGE_ACCOUNT_NAME}"
 
-retry_with_countdown 2 60 "az ml workspace create \
+retry_with_countdown 10 12 "az ml workspace create \
   --name \"$WORKSPACE_NAME\" \
   --resource-group \"$RESOURCE_GROUP\" \
   --location \"$LOCATION\" \
