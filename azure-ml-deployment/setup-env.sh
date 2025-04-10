@@ -14,6 +14,7 @@ set -e
 # ------------------------------------------------------------------------------
 source ./utils/env_check.sh
 source ./utils/retry_utils.sh
+source ./utils/assign_role.sh
 
 # ------------------------------------------------------------------------------
 # 📋 Check all required environment variables
@@ -132,6 +133,48 @@ retry_with_countdown 10 12 "az ml workspace create \
   --key-vault \"$KEY_VAULT_ID\" \
   --application-insights \"$APP_INSIGHTS_ID\" \
   --update-dependent-resources"
+
+# ------------------------------------------------------------------------------
+# 🔐 Enable Managed Identity + Assign Role at Resource Group Level
+# ------------------------------------------------------------------------------
+
+echo "🔐 Enabling system-assigned managed identity for Azure ML workspace..."
+
+az ml workspace update \
+  --name "$WORKSPACE_NAME" \
+  --resource-group "$RESOURCE_GROUP" \
+  --set identity.type="SystemAssigned"
+
+echo "🔍 Waiting for managed identity principal ID to become available..."
+
+retry_with_countdown 30 10 '
+  echo "📡 Checking identity.principal_id..."
+  ID=$(az ml workspace show \
+    --name "'"$WORKSPACE_NAME"'" \
+    --resource-group "'"$RESOURCE_GROUP"'" \
+    --query "identity.principal_id" -o tsv)
+  echo "$ID"
+  [ -n "$ID" ]
+'
+
+# Retrieve the principal ID after it becomes available
+MANAGED_IDENTITY_PRINCIPAL_ID=$(az ml workspace show \
+  --name "$WORKSPACE_NAME" \
+  --resource-group "$RESOURCE_GROUP" \
+  --query "identity.principal_id" -o tsv)
+
+if [ -z "$MANAGED_IDENTITY_PRINCIPAL_ID" ]; then
+  echo "❌ ERROR: Failed to retrieve the managed identity principal ID after multiple attempts."
+  exit 1
+fi
+
+echo "✅ Managed identity principal ID retrieved: $MANAGED_IDENTITY_PRINCIPAL_ID"
+
+# Use the shared utility function to assign the role at RG level
+echo "🛡️  Assigning roles to managed identity..."
+assign_role "$MANAGED_IDENTITY_PRINCIPAL_ID" "Storage Blob Data Reader" "$SUBSCRIPTION_ID" "$RESOURCE_GROUP"
+
+echo "✅ Managed identity is now authorized to access blob storage in the resource group."
 
 # ------------------------------------------------------------------------------
 # 🛢️ Creating Blob Storage Container
@@ -310,7 +353,11 @@ cat <<EOF > "$CONFIG_FILE"
   "azure": {
     "subscription_id": "$SUBSCRIPTION_ID",
     "resource_group": "$RESOURCE_GROUP",
-    "location": "$LOCATION"
+    "location": "$LOCATION",
+    "storage_account_name": "$STORAGE_ACCOUNT_NAME",
+    "storage_container_uri": "https://${STORAGE_ACCOUNT_NAME}.blob.core.windows.net/$CONTAINER_NAME",
+    "managed_identity_principal_id": "$MANAGED_IDENTITY_PRINCIPAL_ID",
+    "auth_mode": "managed_identity"
   },
   "workspace": {
     "workspace_name": "$WORKSPACE_NAME",
