@@ -399,6 +399,37 @@ az storage blob upload \
 
 echo "✅ config.json uploaded to: https://${STORAGE_ACCOUNT_NAME}.blob.core.windows.net/$CONTAINER_NAME/config.json"
 echo "✅ Config written to $CONFIG_FILE"
+
+# ------------------------------------------------------------------------------
+# 🔖 Register config.json in Azure ML
+# ------------------------------------------------------------------------------
+echo "🗂️  Registering 'config.json' as a dataset '$CONFIG_DATASET_NAME'..."
+
+az ml data create \
+  --name "$CONFIG_DATASET_NAME" \
+  --version "$JSON_VERSION" \
+  --type uri_file \
+  --path "azureml://datastores/$DATASTORE_NAME/paths/$CONFIG_BLOB_NAME" \
+  --description "Configuration file containing deployment metadata and parameters." \
+  --resource-group "$RESOURCE_GROUP" \
+  --workspace-name "$WORKSPACE_NAME"
+
+echo "✅ 'config.json' registered as dataset '$CONFIG_DATASET_NAME'. Verifying..."
+
+az ml data show \
+  --name "$CONFIG_DATASET_NAME" \
+  --version "$JSON_VERSION" \
+  --resource-group "$RESOURCE_GROUP" \
+  --workspace-name "$WORKSPACE_NAME" \
+  --only-show-errors > /dev/null
+
+if [ $? -eq 0 ]; then
+  echo "✅ config.json dataset is now visible in Azure ML Studio."
+else
+  echo "❌ ERROR: config.json dataset registration failed."
+  exit 1
+fi
+
 # ------------------------------------------------------------------------------
 # ✅ All Tasks Completed
 # ------------------------------------------------------------------------------
