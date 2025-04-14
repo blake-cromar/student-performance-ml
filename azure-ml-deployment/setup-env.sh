@@ -399,3 +399,24 @@ az storage blob upload \
 
 echo "✅ config.json uploaded to: https://${STORAGE_ACCOUNT_NAME}.blob.core.windows.net/$CONTAINER_NAME/config.json"
 echo "✅ Config written to $CONFIG_FILE"
+# ------------------------------------------------------------------------------
+# ✅ All Tasks Completed
+# ------------------------------------------------------------------------------
+
+echo ""
+echo "🎉 All deployment steps completed successfully!"
+echo ""
+echo "🧾 Summary:"
+echo "   🔹 Workspace         : $WORKSPACE_NAME"
+echo "   🔹 Resource Group    : $RESOURCE_GROUP"
+echo "   🔹 Location          : $LOCATION"
+echo "   🔹 Storage Container : $CONTAINER_NAME"
+echo "   🔹 Dataset Uploaded  : $BLOB_NAME"
+echo "   🔹 Dataset Registered: $DATASET_NAME"
+echo "   🔹 Config File       : $CONFIG_FILE"
+echo "   🔹 Compute Instance  : $NOTEBOOK_COMPUTE_NAME"
+echo ""
+echo "📍 You can now explore your workspace in Azure ML Studio:"
+echo "   https://ml.azure.com/experiments?wsid=/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/workspaces/$WORKSPACE_NAME"
+echo ""
+echo "🚀 Ready for machine learning!"
