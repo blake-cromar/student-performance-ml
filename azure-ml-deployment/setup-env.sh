@@ -193,6 +193,25 @@ echo "✅ Container check complete. Continuing with dataset upload..."
 echo ""
 
 # ------------------------------------------------------------------------------
+# 🛡️ Assign 'Storage Blob Data Reader' to current user (no check)
+# ------------------------------------------------------------------------------
+
+echo "🛡️  Assigning 'Storage Blob Data Reader' role to current user..."
+
+USER_OBJECT_ID=$(az ad signed-in-user show --query id -o tsv)
+USER_UPN=$(az ad signed-in-user show --query userPrincipalName -o tsv)
+echo "👤 Current user: $USER_UPN (object ID: $USER_OBJECT_ID)"
+
+# Assign the role (will fail silently if already exists)
+az role assignment create \
+  --assignee "$USER_OBJECT_ID" \
+  --role "Storage Blob Data Reader" \
+  --scope "/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP/providers/Microsoft.Storage/storageAccounts/$STORAGE_ACCOUNT_NAME" \
+  --only-show-errors || echo "⚠️  Role may already be assigned — continuing..."
+
+echo "✅ Role assignment attempted for current user."
+
+# ------------------------------------------------------------------------------
 # 🗃️ Create custom Azure ML Datastore pointing to the uploaded container
 # ------------------------------------------------------------------------------
 echo "🗃️  Ensuring custom datastore '$DATASTORE_NAME' exists for container '$CONTAINER_NAME'..."
