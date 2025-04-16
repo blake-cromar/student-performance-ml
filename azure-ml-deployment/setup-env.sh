@@ -312,7 +312,7 @@ echo "🧾 Registering dataset '$DATASET_NAME' in Azure ML using CLI..."
 
 az ml data create \
   --name "$DATASET_NAME" \
-  ${DATASET_VERSION:+--version "$DATASET_VERSION"} \
+  --version "$DATASET_VERSION" \
   --path "azureml://datastores/$DATASTORE_NAME/paths/$BLOB_NAME" \
   --type uri_file \
   --description "$DATASET_DESCRIPTION" \
